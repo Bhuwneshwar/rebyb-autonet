@@ -9,14 +9,19 @@ export interface MessageModel extends Document {
   // senderAccess?: boolean;   // Uncomment if needed
 }
 
-const messagesSchema: Schema<MessageModel> = new Schema({
-  message: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now },
-  sender: { type: String, required: true },
-  receiver: { type: String, required: true },
-  // receiverAccess: { type: Boolean, default: true }, // Uncomment if needed
-  // senderAccess: { type: Boolean, default: true },   // Uncomment if needed
-});
+const messagesSchema: Schema<MessageModel> = new Schema(
+  {
+    message: { type: String, required: true },
+    timestamp: { type: Date, default: Date.now },
+    sender: { type: String, required: true },
+    receiver: { type: String, required: true },
+    // receiverAccess: { type: Boolean, default: true }, // Uncomment if needed
+    // senderAccess: { type: Boolean, default: true },   // Uncomment if needed
+  },
+  {
+    timestamps: true,
+  }
+);
 
 const Message = mongoose.model<MessageModel>("Message", messagesSchema);
 

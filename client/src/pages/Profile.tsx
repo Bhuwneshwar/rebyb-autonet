@@ -8,6 +8,8 @@ import { formatDate } from "../utils/formatDate";
 import ClipboardCopy from "../components/ClipboardCopy";
 import { NavLink, useNavigate } from "react-router-dom";
 import { move } from "../utils/functions";
+import PriorityDragable from "../components/PriorityDragable";
+import { Link } from "react-router-dom";
 
 interface ProfileEdit {
   name?: string;
@@ -72,7 +74,7 @@ interface InitialOptions {
 const Profile: React.FC = () => {
   const navigate = useNavigate();
   const {
-    store: { MyDetails },
+    store: { MyDetails, scrolledPosition },
     dispatch,
   } = useGlobalContext();
 
@@ -627,6 +629,37 @@ const Profile: React.FC = () => {
     }
     dispatch("loading", false);
   };
+  const genPdf = async () => {
+    try {
+      dispatch("loading", true);
+      const { data } = await axios.get("/api/v1/pdf/rebyb", {
+        withCredentials: true,
+      });
+
+      console.log({ data });
+
+      if (data.success) {
+        toast.success("Auto-Net card generated successfully for 1 minutes!", {
+          position: "bottom-center",
+        });
+        window.open(data.url, "_blank");
+        const hostUrl = window.location.origin;
+        console.log({ hostUrl }); // Output: http://localhost:3000 (or the current host)
+      }
+      if (data.error) {
+        toast.error(data.error, {
+          position: "bottom-center",
+        });
+      }
+    } catch (e: any) {
+      console.log(e);
+      toast.error(e.message, {
+        position: "bottom-center",
+      });
+    }
+    dispatch("loading", false);
+  };
+
   const genReferCode = async () => {
     try {
       dispatch("loading", true);
@@ -909,9 +942,22 @@ const Profile: React.FC = () => {
     }
   }, [MyDetails]);
 
+  // handle the scroll position
+  const handleScroll = () => {
+    dispatch("scrolledPosition", {
+      ...scrolledPosition,
+      profile: { ...scrolledPosition.profile, top: window.scrollY },
+    });
+  };
+
   useEffect(() => {
     console.log("first time render");
     initial();
+    window.scrollTo(0, scrolledPosition.profile.top);
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   return (
@@ -972,38 +1018,37 @@ const Profile: React.FC = () => {
             </h1>
             <div className="bio">
               <div className="age">
-                <div>Age: </div>
-                <div>
-                  <input
-                    type="number"
-                    disabled={!editToggle.age}
-                    onBlur={updateAge}
-                    onChange={handleChange}
-                    value={profileEdit.age}
-                    name="age"
-                    placeholder="Age"
-                    required
-                  />
-                  <span
-                    onClick={(e) =>
-                      setEditToggle({ ...editToggle, age: !editToggle.age })
-                    }
-                  >
-                    <EditIcon />
-                  </span>
-                </div>
+                <label htmlFor="age">Age: </label>
+                <input
+                  type="number"
+                  disabled={!editToggle.age}
+                  onBlur={updateAge}
+                  onChange={handleChange}
+                  value={profileEdit.age}
+                  name="age"
+                  id="age"
+                  placeholder="Age"
+                  required
+                />
+                <span
+                  onClick={(e) =>
+                    setEditToggle({ ...editToggle, age: !editToggle.age })
+                  }
+                >
+                  <EditIcon />
+                </span>
               </div>
 
               <div className="gender">
                 <div>Gender: </div>
                 <div>
-                  <span> {MyDetails?.gender} </span>
+                  {/* <span> {MyDetails?.gender} </span> */}
 
                   <select
                     value={profileEdit.gender}
                     name="gender"
                     id="gender"
-                    disabled={!editToggle.gender}
+                    // disabled={!editToggle.gender}
                     onChange={handleChange}
                     required
                     onBlur={updateGender}
@@ -1013,7 +1058,7 @@ const Profile: React.FC = () => {
                     <option value="female">Female</option>
                     <option value="other">Other</option>
                   </select>
-                  <span
+                  {/* <span
                     onClick={(e) =>
                       setEditToggle({
                         ...editToggle,
@@ -1022,7 +1067,7 @@ const Profile: React.FC = () => {
                     }
                   >
                     <EditIcon />
-                  </span>
+                  </span> */}
                 </div>
               </div>
             </div>
@@ -1033,7 +1078,7 @@ const Profile: React.FC = () => {
               <p>contact information</p>
               <div className="contact">
                 <p className="label">Contact Number</p>
-                <div>
+                <div className="d-f">
                   <input
                     value={profileEdit.contact}
                     name="contact"
@@ -1055,9 +1100,9 @@ const Profile: React.FC = () => {
                   >
                     <EditIcon />
                   </span>
-                  <p>{showDueTime}</p>
                 </div>
-                <div>
+                <p>{showDueTime}</p>
+                <div className="d-f">
                   <p className="label-otp">OTP</p>
                   <input
                     value={profileEdit.contactOTP}
@@ -1075,7 +1120,7 @@ const Profile: React.FC = () => {
               </div>
               <div className="contact">
                 <p className="label">Email</p>
-                <div>
+                <div className="d-f">
                   <input
                     value={profileEdit.email}
                     name="email"
@@ -1118,15 +1163,13 @@ const Profile: React.FC = () => {
             <div className="ids">
               <div className="main-id">
                 <p className="label">My ID:</p>
-                <p>
-                  {MyDetails._id}{" "}
-                  <button>
-                    <ClipboardCopy code={MyDetails._id} />
-                  </button>
-                </p>
+                <p>{MyDetails._id} </p>
+                <button>
+                  <ClipboardCopy code={MyDetails._id} />
+                </button>
               </div>
               <div className="refer-id">
-                <p className="label">My Refer Code: </p>
+                <p className="label">My Username: </p>
 
                 <input
                   value={profileEdit.newReferCode}
@@ -1136,26 +1179,28 @@ const Profile: React.FC = () => {
                   disabled={!editToggle.newReferCode}
                   onBlur={setReferCode}
                 />
-                <button>
-                  <ClipboardCopy code={MyDetails.referCode} />
-                </button>
-                <button
-                  onClick={(e) =>
-                    setEditToggle((prev) => ({
-                      ...prev,
-                      newReferCode: !prev.newReferCode,
-                    }))
-                  }
-                >
-                  Edit
-                </button>
-                <button onClick={genReferCode}>Regenerate</button>
+                <div className="btns">
+                  <button>
+                    <ClipboardCopy code={MyDetails.referCode} />
+                  </button>
+                  <button
+                    onClick={(e) =>
+                      setEditToggle((prev) => ({
+                        ...prev,
+                        newReferCode: !prev.newReferCode,
+                      }))
+                    }
+                  >
+                    Edit
+                  </button>
+                  <button onClick={genReferCode}>Regenerate</button>
+                </div>
               </div>
             </div>
-            <div className="balance">
+            {/* <div className="balance">
               <p className="label">My Balance: </p>
               <p>{MyDetails.Balance}</p>
-            </div>
+            </div> */}
 
             <div className="rech-for-num">
               <h2>Recharge for numbers</h2>
@@ -1537,142 +1582,22 @@ const Profile: React.FC = () => {
             </div>
 
             <div className="priority-order">
-              <h2> priority order </h2>
+              <h2> Priority order </h2>
 
-              <div className="priority">
-                {priority.map((v, i) => {
-                  if (v === "withdraw") {
-                    return (
-                      <div key={i} className="order">
-                        <div className="title">
-                          <span>Auto withdraw</span>
-                          <input
-                            onChange={() =>
-                              setProfileEdit({
-                                ...profileEdit,
-                                autoWithdraw: !profileEdit.autoWithdraw,
-                              })
-                            }
-                            checked={profileEdit.autoWithdraw}
-                            type="checkbox"
-                            name="autoWithdraw"
-                            id="autoWithdraw"
-                          />
-                          <label htmlFor="autoWithdraw">On</label>
-
-                          <input
-                            type="range"
-                            name="withdraw_perc"
-                            id=""
-                            min="1"
-                            max="100"
-                            onChange={handleChange}
-                            value={profileEdit.withdraw_perc}
-                            style={{
-                              accentColor: profileEdit.autoWithdraw
-                                ? "#0b5aee"
-                                : "gray",
-                            }}
-                          />
-                          <span>{profileEdit.withdraw_perc}%</span>
-                        </div>
-
-                        <div className="arrow">
-                          <div
-                            onClick={() => moveMe(priority, "up", i)}
-                            className="up"
-                          >
-                            ⬆️
-                          </div>
-                          <div
-                            onClick={() => moveMe(priority, "down", i)}
-                            className="down"
-                          >
-                            ⬇️
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  } else if (v === "nextInvest") {
-                    return (
-                      <div className="order">
-                        <div className="title">
-                          <span>Auto Reserve for next invest</span>
-                          <input
-                            onChange={() =>
-                              setProfileEdit({
-                                ...profileEdit,
-                                NextInvest: !profileEdit.NextInvest,
-                              })
-                            }
-                            checked={profileEdit.NextInvest}
-                            type="checkbox"
-                            name="NextInvest"
-                            id="NextInvest"
-                          />
-                          <label htmlFor="NextInvest"> On</label>
-                        </div>
-
-                        <div className="arrow">
-                          <div
-                            onClick={() => moveMe(priority, "up", i)}
-                            className="up"
-                          >
-                            ⬆️
-                          </div>
-                          <div
-                            onClick={() => moveMe(priority, "down", i)}
-                            className="down"
-                          >
-                            ⬇️
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  } else
-                    return (
-                      <div className="order">
-                        <div className="title">
-                          <span>Auto recharge All Numbers</span>
-                          <input
-                            onChange={() =>
-                              setProfileEdit({
-                                ...profileEdit,
-                                autoRecharge: !profileEdit.autoRecharge,
-                              })
-                            }
-                            checked={profileEdit.autoRecharge}
-                            type="checkbox"
-                            name="autoRecharge"
-                            id="autoRecharge"
-                          />
-                          <label htmlFor="autoRecharge">On</label>
-                        </div>
-
-                        <div className="arrow">
-                          <div
-                            onClick={() => moveMe(priority, "up", i)}
-                            className="up"
-                          >
-                            ⬆️
-                          </div>
-                          <div
-                            onClick={() => moveMe(priority, "down", i)}
-                            className="down"
-                          >
-                            ⬇️
-                          </div>
-                        </div>
-                      </div>
-                    );
-                })}
-              </div>
+              <PriorityDragable
+                array={priority}
+                changeHandler={setProfileEdit}
+                details={profileEdit}
+                setDetails={profileEdit}
+              />
             </div>
 
-            <div>
-              <NavLink to="/password-set">
+            <div className="btns">
+              <Link to="/password-set">
                 {MyDetails.password ? "Change Password" : "Set New Password"}{" "}
-              </NavLink>
+              </Link>
+              <button onClick={genPdf}>Generate PDF</button>
+              <button onClick={genPdf}>Register Passkey</button>
             </div>
           </form>
         </div>

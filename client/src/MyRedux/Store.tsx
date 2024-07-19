@@ -65,8 +65,8 @@ export interface IMyDetails {
       many: number;
       when: Date;
       _id: string;
-    };
-  };
+    }[];
+  }[];
   goldenFunds: {
     buyTime: Date;
     fund: number;
@@ -74,8 +74,8 @@ export interface IMyDetails {
       many: number;
       when: Date;
       _id: string;
-    };
-  };
+    }[];
+  }[];
 }
 
 export interface InitialState {
@@ -85,6 +85,49 @@ export interface InitialState {
   MyDetails?: IMyDetails;
   loading: boolean;
   error: any;
+  scrolledPosition: {
+    //for all pages
+    admin: {
+      top: number;
+      left: number;
+    };
+    chat: {
+      top: number;
+      left: number;
+    };
+    dashboard: {
+      top: number;
+      left: number;
+    };
+    home: {
+      top: number;
+      left: number;
+    };
+    login: {
+      top: number;
+      left: number;
+    };
+    messages: {
+      top: number;
+      left: number;
+    };
+    passwordSet: {
+      top: number;
+      left: number;
+    };
+    paymentScanner: {
+      top: number;
+      left: number;
+    };
+    profile: {
+      top: number;
+      left: number;
+    };
+    signup: {
+      top: number;
+      left: number;
+    };
+  };
 }
 
 const initialState: InitialState = {
@@ -93,6 +136,50 @@ const initialState: InitialState = {
   role: "public", // public, admin, user, editor, employee
   loading: false,
   error: null,
+  scrolledPosition: {
+    //for all pages
+    admin: {
+      top: 0,
+      left: 0,
+    },
+    chat: {
+      top: 0,
+      left: 0,
+    },
+    dashboard: {
+      top: 0,
+      left: 0,
+    },
+    home: {
+      top: 0,
+      left: 0,
+    },
+    login: {
+      top: 0,
+      left: 0,
+    },
+    messages: {
+      top: 0,
+      left: 0,
+    },
+    passwordSet: {
+      top: 0,
+      left: 0,
+    },
+    paymentScanner: {
+      top: 0,
+      left: 0,
+    },
+    profile: {
+      top: 0,
+      left: 0,
+    },
+    signup: {
+      top: 0,
+      left: 0,
+    },
+    // add more pages here
+  },
 };
 
 export default initialState;

@@ -1,35 +1,72 @@
 import { Link } from "react-router-dom";
 import { useGlobalContext } from "../MyRedux";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import GridViewRoundedIcon from "@mui/icons-material/GridViewRounded";
+import HouseRoundedIcon from "@mui/icons-material/HouseRounded";
+import LockOpenRoundedIcon from "@mui/icons-material/LockOpenRounded";
+import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
 
 const Navbar = () => {
   const {
+    dispatch,
     store: { nav },
   } = useGlobalContext();
   console.log({ nav });
 
   return (
-    <nav className={nav ? "navShow" : "navHide"}>
+    <nav
+      onClick={() => dispatch("nav", false)}
+      className={nav ? "navShow" : "navHide"}
+    >
       <ul>
         <li>
-          <Link to="/">Home</Link>
+          <Link to="/home">
+            <HouseRoundedIcon />
+            Home
+          </Link>
         </li>
         <li>
-          <Link to="/dashboard">Dashboard</Link>
+          <Link to="/dashboard">
+            <GridViewRoundedIcon />
+            Dashboard
+          </Link>
         </li>
         <li>
-          <Link to="/profile">Profile</Link>
+          <Link to="/profile">
+            {" "}
+            <AccountCircleIcon />
+            Profile
+          </Link>
         </li>
         <li>
-          <Link to="/signup">Add New User</Link>
+          <Link to="/signup">
+            <AddCircleIcon />
+            Add New User
+          </Link>
         </li>
         <li>
-          <Link to="/login">Sign In</Link>
+          <Link to="/login">
+            {" "}
+            <LockOpenRoundedIcon />
+            Sign In
+          </Link>
         </li>
         <li>
-          <Link to="/messages">Message</Link>
+          <Link to="/messages">
+            {" "}
+            <EmailRoundedIcon /> Message
+          </Link>
         </li>
         <li>
-          <Link to="/logout">Logout</Link>
+          <Link to="/logout">
+            {" "}
+            <LogoutRoundedIcon />
+            Logout
+          </Link>
         </li>
       </ul>
     </nav>

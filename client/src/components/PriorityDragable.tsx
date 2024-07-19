@@ -165,7 +165,7 @@ const UserItem: FC<UserItemProps> = (props) => {
         <div className="title">
           <span>Auto recharge All Numbers</span>
           <input
-            onChange={(e) =>
+            onChange={() =>
               setDetails({
                 ...details,
                 autoRecharge: !details.autoRecharge,

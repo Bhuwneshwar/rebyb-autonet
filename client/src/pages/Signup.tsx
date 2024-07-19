@@ -1,11 +1,11 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { move } from "../utils/functions";
 import PaymentUsingRazorpay from "../utils/PaymentUsingRazorpay";
 import { useGlobalContext } from "../MyRedux";
-import Navbar from "../components/Navbar";
 import PriorityDragable from "../components/PriorityDragable";
+import ArrowForwardIos from "@mui/icons-material/ArrowForwardIos";
+import { toast } from "react-toastify";
 
 interface Details {
   name: string;
@@ -258,10 +258,10 @@ const Signup = () => {
 
           const { data } = await axios.get(`/api/check/number/?mob=${mob}`);
           console.log(data);
-          setNotify((prev) => ({
-            ...prev,
-            num1: data,
-          }));
+          // setNotify((prev) => ({
+          //   ...prev,
+          //   num1: data,
+          // }));
         }
       }
     } catch (error) {
@@ -345,26 +345,61 @@ const Signup = () => {
 
   const sendPhoneOtp = async () => {
     try {
+      dispatch("loading", true);
       const res = await axios.post("/api/v1/phone/otp/send", {
         contact: details.phoneNumber,
       });
-      console.log(res);
-      setDetails({ ...details, phoneOtp: res.data.otp });
+      console.log({ ...res.data });
+      if (res.data.success) {
+        setDetails({ ...details, phoneOtp: res.data.otp });
+        toast.success("Otp sent successfully", {
+          position: "bottom-center",
+        });
+      }
+      if (res.data.error) {
+        toast.error(res.data.error, {
+          position: "bottom-center",
+        });
+      }
     } catch (e) {
       console.log(e);
+      toast.error("Failed to send Otp", {
+        position: "bottom-center",
+      });
     }
+    dispatch("loading", false);
   };
 
   const verifyPhoneOtp = async () => {
     try {
+      dispatch("loading", true);
       const res = await axios.post("/api/v1/phone/otp/verify", {
         contact: details.phoneNumber,
         userOtp: details.phoneOtp,
       });
-      console.log(res);
+      console.log({ ...res.data });
+      if (res.data.success) {
+        toast.success("Phone verified successfully", {
+          position: "bottom-center",
+        });
+      }
+      if (res.data.warning) {
+        toast.warning(res.data.warning, {
+          position: "bottom-center",
+        });
+      }
+      if (res.data.error) {
+        toast.error(res.data.error, {
+          position: "bottom-center",
+        });
+      }
     } catch (e) {
       console.log(e);
+      toast.error("Failed to Verify the phone", {
+        position: "bottom-center",
+      });
     }
+    dispatch("loading", false);
   };
 
   const sendEmailOtp = async () => {
@@ -420,24 +455,25 @@ const Signup = () => {
   return (
     data && (
       <div className="signup-form">
-        <h1>Signup Form </h1>
         <form
           onSubmit={(e) => e.preventDefault()}
           method="post"
           accept-charset="utf-8"
         >
           <div className="bg-white">
-            <div className="border-label">
-              <label htmlFor="name">Name : </label>
-              <input
-                onChange={changeHandler}
-                name="name"
-                id="name"
-                value={details.name}
-                placeholder="Enter Name here..."
-              />
-            </div>
+            <h1>Signup Form </h1>
             <div className="biog">
+              <div className="border-label">
+                <label htmlFor="name">Name : </label>
+                <input
+                  onChange={changeHandler}
+                  name="name"
+                  id="name"
+                  value={details.name}
+                  placeholder="Enter Name here..."
+                />
+                <p className="error">Error now name is not available</p>
+              </div>
               <div className="border-label">
                 <label htmlFor="age">Age : </label>
                 <input
@@ -446,7 +482,9 @@ const Signup = () => {
                   name="age"
                   id="age"
                   value={details.age}
+                  placeholder="e.g. 22.5"
                 />
+                <p className="error"></p>
               </div>
               <div className="border-label">
                 <label htmlFor="gender">Gender : </label>
@@ -462,60 +500,83 @@ const Signup = () => {
                   <option value="other">Other</option>
                   <option value="kuchv">kuchv</option>
                 </select>
+                <p className="error">Error now name is not available</p>
               </div>
             </div>
-            <div className="biog">
+            <div className="contact-info">
               <div className="border-label">
                 <label htmlFor="number">Phone Number : </label>
-                <input
-                  onChange={changeHandler}
-                  type="number"
-                  name="phoneNumber"
-                  id="number"
-                  value={details.phoneNumber}
-                />
-                <button onClick={sendPhoneOtp}> send OTP</button>
+                <div className="num-btn">
+                  <input
+                    onChange={changeHandler}
+                    type="number"
+                    name="phoneNumber"
+                    id="number"
+                    value={details.phoneNumber}
+                  />
+                  <button onClick={sendPhoneOtp}>
+                    <ArrowForwardIos />
+                  </button>
+                </div>
+                <p className="error">Error now name is not available</p>
               </div>
               <div className="border-label">
                 <label htmlFor="phoneOtp">OTP: </label>
-                <input
-                  name="phoneOtp"
-                  onChange={changeHandler}
-                  id="phoneOtp"
-                  value={details.phoneOtp}
-                  placeholder="Enter OTP"
-                  className="otp-input"
-                />
-                <button onClick={verifyPhoneOtp}>Verify</button>
+                <div className="num-btn">
+                  <input
+                    name="phoneOtp"
+                    onChange={changeHandler}
+                    id="phoneOtp"
+                    value={details.phoneOtp}
+                    placeholder="Enter OTP"
+                    className="otp-input"
+                  />
+                  <button onClick={verifyPhoneOtp}>
+                    Verify
+                    <ArrowForwardIos />
+                  </button>
+                </div>
+                <p className="error">Error now name is not available</p>
               </div>
             </div>
-            <div className="biog">
+            <div className="contact-info">
               <div className="border-label email">
                 <label htmlFor="email">Email : </label>
-                <input
-                  onChange={changeHandler}
-                  type="email"
-                  name="email"
-                  id="email"
-                  value={details.email}
-                />
-                <button onClick={sendEmailOtp}> Send OTP</button>
+                <div className="num-btn">
+                  <input
+                    onChange={changeHandler}
+                    type="email"
+                    name="email"
+                    id="email"
+                    value={details.email}
+                  />
+                  <button onClick={sendEmailOtp}>
+                    {" "}
+                    <ArrowForwardIos />
+                  </button>
+                </div>
               </div>
               <div className="border-label ">
                 <label htmlFor="emailOtp">OTP : </label>
-                <input
-                  onChange={changeHandler}
-                  name="emailOtp"
-                  id="emailOtp"
-                  value={details.emailOtp}
-                  placeholder="Enter OTP"
-                  className="otp-input"
-                />
-                <button onClick={verifyEmailOtp}>Verify</button>
+                <div className="num-btn">
+                  <input
+                    onChange={changeHandler}
+                    name="emailOtp"
+                    id="emailOtp"
+                    value={details.emailOtp}
+                    placeholder="Enter OTP"
+                    className="otp-input"
+                  />
+                  <button onClick={verifyEmailOtp}>
+                    Verify
+                    <ArrowForwardIos />
+                  </button>
+                </div>
               </div>
             </div>
             <div className="choose-fund">
               <h2>Choose Funds</h2>
+
               <div className="notes">
                 <div className="diamond note">
                   <label htmlFor="diamond">Diamond : </label>
@@ -530,9 +591,10 @@ const Signup = () => {
                       return <option value={v}>{v} X 1000</option>;
                     })}
                   </select>
+
                   <p>
                     Invest: {details.diamond * 1000}; Return:{" "}
-                    {details.diamond * 2000} in under 3 months
+                    {details.diamond * 2000} in av. 3 months
                   </p>
                 </div>
                 <div className="golden note">
@@ -550,16 +612,17 @@ const Signup = () => {
                   </select>
                   <p>
                     Invest: {details.golden * 500}; Return:{" "}
-                    {details.golden * 1000} in under 3 months
+                    {details.golden * 1000} in av. 3 months
                   </p>
                 </div>
               </div>
               <p>
                 Total Invest: {details.diamond * 1000 + details.golden * 500}{" "}
-                Return: {details.golden * 1000 + details.diamond * 2000} in
-                under 3 months
+                Return: {details.golden * 1000 + details.diamond * 2000} in av.
+                3 months
               </p>
             </div>
+
             <div className="rech-for-num">
               <h2>Recharge for numbers</h2>
               <div className="responsive">
@@ -577,7 +640,7 @@ const Signup = () => {
                   <p>{notify.num1}</p>
                 </div>
                 <div className="opera">
-                  <label htmlFor="opera1">Select Operator For Number 1</label>
+                  <label htmlFor="opera1"> Operator For Number 1</label>
                   <select
                     value={details.opera1}
                     onChange={changeHandler}
@@ -592,7 +655,7 @@ const Signup = () => {
                   <p>Error Meassage</p>
                 </div>
                 <div className="opera">
-                  <label htmlFor="state1">Select State For Number 1</label>
+                  <label htmlFor="state1"> State For Number 1</label>
 
                   <select
                     value={details.state1}
@@ -608,9 +671,7 @@ const Signup = () => {
                   <p>Error Meassage</p>
                 </div>
                 <div className="opera">
-                  <label htmlFor="SelectedPlan1">
-                    Select A Plan For Number 1
-                  </label>
+                  <label htmlFor="SelectedPlan1">Plan For Number 1</label>
 
                   <select
                     onChange={changeHandler}
@@ -630,7 +691,7 @@ const Signup = () => {
                 </div>
                 <div className="num">
                   <label htmlFor="ExistingValidityOne">
-                    Enter Existing Plan Validity Days For Number 1
+                    Existing Plan Validity 1
                   </label>
 
                   <input
@@ -663,7 +724,7 @@ const Signup = () => {
                   <p>{notify.num2}</p>
                 </div>
                 <div className="opera">
-                  <label htmlFor="opera2">Select Operator For Number 2</label>
+                  <label htmlFor="opera2"> Operator For Number 2</label>
 
                   <select
                     value={details.opera2}
@@ -679,7 +740,7 @@ const Signup = () => {
                   <p>Error Meassage</p>
                 </div>
                 <div className="opera">
-                  <label htmlFor="state2">Select State For Number 2</label>
+                  <label htmlFor="state2"> State For Number 2</label>
 
                   <select
                     value={details.state2}
@@ -695,9 +756,7 @@ const Signup = () => {
                   <p>Error Meassage</p>
                 </div>
                 <div className="opera">
-                  <label htmlFor="SelectedPlan2">
-                    Select A Plan For Number 2
-                  </label>
+                  <label htmlFor="SelectedPlan2">Plan For Number 2</label>
                   <select
                     onChange={changeHandler}
                     name="SelectedPlan2"
@@ -716,7 +775,7 @@ const Signup = () => {
                 </div>
                 <div className="num">
                   <label htmlFor="ExistingValiditytwo">
-                    Enter Existing Plan Validity Days For Number 2
+                    Plan Validity Number 2
                   </label>
 
                   <input
@@ -749,7 +808,7 @@ const Signup = () => {
                   <p>{notify.num3}</p>
                 </div>
                 <div className="opera">
-                  <label htmlFor="opera3">Select Operator For Number 3</label>
+                  <label htmlFor="opera3"> Operator For Number 3</label>
 
                   <select
                     value={details.opera3}
@@ -765,7 +824,7 @@ const Signup = () => {
                   <p>Error Meassage</p>
                 </div>
                 <div className="opera">
-                  <label htmlFor="state3">Select State For Number 3</label>
+                  <label htmlFor="state3"> State For Number 3</label>
 
                   <select
                     value={details.state3}
@@ -781,9 +840,7 @@ const Signup = () => {
                   <p>Error Meassage</p>
                 </div>
                 <div className="opera">
-                  <label htmlFor="SelectedPlan3">
-                    Select A Plan For Number 3
-                  </label>
+                  <label htmlFor="SelectedPlan3">Plan For Number 3</label>
 
                   <select
                     onChange={changeHandler}
@@ -803,7 +860,7 @@ const Signup = () => {
                 </div>
                 <div className="num">
                   <label htmlFor="ExistingValiditythree">
-                    Enter Existing Plan Validity Days For Number 3
+                    Existing Plan Validity 3
                   </label>
                   <input
                     type="number"
@@ -815,7 +872,6 @@ const Signup = () => {
                     value={details.ExistingValiditythree}
                     placeholder="Existing Validity "
                   />
-                  useEffect
                   <p>Error Meassage</p>
                 </div>
               </div>
@@ -824,9 +880,7 @@ const Signup = () => {
               <h2>Accounts Information</h2>
               <div className="responsive">
                 <div className="select-box">
-                  <label htmlFor="transactionMethod">
-                    Select Transaction Method
-                  </label>
+                  <label htmlFor="transactionMethod">Transaction Method</label>
                   <select
                     onChange={changeHandler}
                     value={details.transactionMethod}
@@ -842,7 +896,7 @@ const Signup = () => {
                 </div>
                 <div className="input-text">
                   <label htmlFor="transactionMethod">
-                    Enter UPI ID/UPI Phone Number
+                    UPI ID/UPI Phone Number
                   </label>
 
                   <input
@@ -895,10 +949,10 @@ const Signup = () => {
               </div>
             </div>
 
-            <h3>Refer Code </h3>
-            <div className="responsive">
-              <div className="input-text">
-                <label htmlFor="refered-id">Refered ID</label>
+            <h3>Username Code </h3>
+            <div className="responsive ">
+              <div className="input-text refer-code">
+                <label htmlFor="refered-id">Username ID</label>
                 <input
                   name="refer"
                   onChange={changeHandler}
@@ -907,8 +961,8 @@ const Signup = () => {
                 />
                 <p>Error Meassage</p>
               </div>
-              <div className="input-text">
-                <label htmlFor="refered-id">Make New Refer ID</label>
+              <div className="input-text refer-code">
+                <label htmlFor="refered-id">Make New Username ID</label>
 
                 <input
                   name="setRefer"
@@ -921,7 +975,7 @@ const Signup = () => {
             </div>
 
             <div className="priority-order">
-              <h2> priority order </h2>
+              <h2> Priority order </h2>
 
               <PriorityDragable
                 array={priority}
@@ -930,12 +984,10 @@ const Signup = () => {
                 setDetails={setDetails}
               />
             </div>
-            <br />
-            <br />
-          </div>
-          <div className="btns">
-            <button type="submit">Pay</button>
-            <button onClick={getPdf}>generate pdf</button>
+            <div className="btns">
+              <button type="submit">Pay</button>
+              {/* <button onClick={getPdf}>generate pdf</button> */}
+            </div>
           </div>
         </form>
       </div>

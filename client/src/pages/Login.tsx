@@ -201,12 +201,12 @@ const Login = () => {
             </div>
           </div>
         </div>
-        <Link to="/signup">Signup New User</Link>
-        <br />
         <div className="btns">
           <button type="submit" onClick={verifyOtp}>
             Verify & Login
           </button>
+          <br />
+          <Link to="/signup">Signup New User</Link>
         </div>
       </form>
     </div>

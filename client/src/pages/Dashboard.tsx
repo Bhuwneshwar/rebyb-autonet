@@ -7,6 +7,9 @@ import Loding from "../components/Loding";
 import { toast } from "react-toastify";
 import PaymentUsingRazorpay from "../utils/PaymentUsingRazorpay";
 import { IMyDetails } from "../MyRedux/Store";
+import FileDownloadDoneIcon from "@mui/icons-material/FileDownloadDone";
+import AddIcon from "@mui/icons-material/Add";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
 interface InputData {
   sdmn: number;
@@ -32,6 +35,7 @@ interface InputData {
   recievedId: string;
   referCode: string;
   amount: number;
+  mrHistoryToggle: boolean;
 }
 
 // interface Data {
@@ -92,6 +96,7 @@ const Dashboard: React.FC = () => {
     recievedId: "",
     referCode: "",
     amount: 0,
+    mrHistoryToggle: false,
   });
 
   const handleChange = (
@@ -436,161 +441,714 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  {
-    return data ? (
-      <>
-        <div className="dashboard">
-          <h1>Bhuwneshwar Mandal </h1>
-          <div className="d-f">
-            <div>Registration Date: {"formattedDate"}</div>
-            <div>My Balance: {50050}</div>
-          </div>
-          <div className="btns">
-            <button onClick={(e) => navigate("/signup")}>Add New User</button>
-          </div>
-          <div className="responsive">
-            <div className="border-label">
-              <span>Primary Phone Number</span>
-              <p>6205085598</p>
-            </div>
-            <div className="border-label">
-              <span>Primary Email ID</span>
-              <p>krabi6563@gmail.com</p>
-            </div>
-          </div>
+  return data ? (
+    <>
+      <div className="dashboard">
+        <h1>
+          {" "}
+          Welcome Mr. <span>Bhuwneshwar Mandal</span>{" "}
+        </h1>
+        <div className="d-f">
+          <div>Registration Date: {"formattedDate"}</div>
+          <div>My Balance: {50050}</div>
+        </div>
 
-          <div className="responsive">
-            <div className="border-label">
-              <span>Top Up From Bank</span>
-              <input
-                type="number"
-                placeholder="Amount..."
-                onChange={handleChange}
-                name="topup"
-                id=""
-                value={input_data.topup}
-              />
-              <br />
-              <button onClick={topup}>TopUp</button>
-            </div>
-            <div className="border-label">
-              <span>Withdraw on Bank</span>
-              <input
-                type="number"
-                placeholder="Amount..."
-                onChange={handleChange}
-                name="withDraw"
-                id=""
-                value={input_data.withDraw}
-              />
-              <br />
-              <button onClick={withDraw}>Withdraw</button>
-            </div>
-            <div className="border-label">
-              <span>Recharge Now</span>
-              <div className="d-g">
-                <select
-                  onChange={handleChange}
-                  value={input_data.rechNumber}
-                  name="rechNumber"
-                  id="rechargeNums"
+        <div className="diamond-bg">
+          <h3> 💎 Diamond Funds 💎</h3>
+          <div className="wtb responsive">
+            {data.diamondFunds.map((item) => (
+              <div className="fund">
+                <div className="return">
+                  <FileDownloadDoneIcon className="i" />
+
+                  <span> ₹:{item.fund}.00/-</span>
+
+                  <span className="diamond-id">Diamond ID: {566}</span>
+                </div>
+
+                <div className="date">
+                  <span>Buy At: </span>
+                  <span>{formatDate(item.buyTime)}</span>
+                </div>
+                <div className="percent">
+                  <div className="info">
+                    <span className="oma"> {item.fund}/-</span>
+                    <span className="perti">
+                      {(item.fund / 2000) * 100 + "%"}
+                    </span>
+                    <span className="out_of">2000/- </span>
+                  </div>
+                  <div className="level-bg">
+                    <div
+                      style={{ width: (item.fund / 2000) * 100 + "%" }}
+                      className="level"
+                    ></div>
+                  </div>
+                </div>
+                <div
+                  className={
+                    input_data.mrHistoryToggle
+                      ? "return-history expend"
+                      : "return-history"
+                  }
                 >
-                  <option value="0">select contact</option>
-                  {/* {data.rechNums.map((ob, i) => {
+                  <div className="toggle">
+                    <label htmlFor="m-r-history-toggle">
+                      Money Return History
+                    </label>
+                    <input
+                      onChange={(e) =>
+                        setInputData((prev) => ({
+                          ...prev,
+                          mrHistoryToggle: !input_data.mrHistoryToggle,
+                        }))
+                      }
+                      checked={input_data.mrHistoryToggle}
+                      id="m-r-history-toggle"
+                      type="checkbox"
+                      hidden
+                    />
+                    <KeyboardArrowDownIcon
+                      className={input_data.mrHistoryToggle ? "ir" : "i"}
+                    />
+                  </div>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>ID</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {item.funding.map((fund) => (
+                        <tr className={true ? "upcoming" : ""}>
+                          <td>{fund.many}</td>
+                          <td>{formatDate(fund.when)}</td>
+                          <td>{fund._id}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <p>
+                    Money Expend History: 500-&gt;ID:200, 250-&gt;ID:100,
+                    20-&gt;Refferal, 230-&gt;service{" "}
+                  </p>
+                </div>
+                <p className="note">
+                  <span>NOTE: </span>Total Return Amount will take av. 3 months.
+                </p>
+              </div>
+            ))}
+
+            <div className="fund total diamond">
+              <h3>Total Diamond Funds</h3>
+              <div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Diamond</th>
+                      <th>X</th>
+                      <th>Value</th>
+                      <th>EQ</th>
+                      <th>Total</th>
+                      <th>Describe</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{data.diamondFunds.length}</td>
+                      <td>X</td>
+                      <td>1000</td>
+                      <td>=</td>
+                      <td>{data.diamondFunds.length * 1000}</td>
+                      <td>Invested</td>
+                    </tr>
+                    <tr>
+                      <td>{data.diamondFunds.length}</td>
+                      <td>X</td>
+                      <td>2000</td>
+                      <td>=</td>
+                      <td>{data.diamondFunds.length * 2000}</td>
+                      <td>Incoming</td>
+                    </tr>
+                    <tr>
+                      <td>Total</td>
+                      <td>count</td>
+                      <td>of</td>
+                      <td> returned </td>
+                      <td>
+                        {data.diamondFunds
+                          .map((item) => item.fund)
+                          .reduce(
+                            (accumulator, currentValue) =>
+                              accumulator + currentValue,
+                            0
+                          )}
+                      </td>
+                      <td>Returned</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="percent">
+                  <div className="info">
+                    <span className="oma">
+                      {" "}
+                      {data.diamondFunds
+                        .map((item) => item.fund)
+                        .reduce(
+                          (accumulator, currentValue) =>
+                            accumulator + currentValue,
+                          0
+                        )}
+                      /-
+                    </span>
+                    <span className="perti">
+                      {(data.diamondFunds
+                        .map((item) => item.fund)
+                        .reduce(
+                          (accumulator, currentValue) =>
+                            accumulator + currentValue,
+                          0
+                        ) /
+                        (data.diamondFunds.length * 2000)) *
+                        100}
+                      %
+                    </span>
+                    <span className="out_of">
+                      {data.diamondFunds.length * 2000}/-{" "}
+                    </span>
+                  </div>
+                  <div className="level-bg">
+                    <div
+                      style={{
+                        width:
+                          (data.diamondFunds
+                            .map((item) => item.fund)
+                            .reduce(
+                              (accumulator, currentValue) =>
+                                accumulator + currentValue,
+                              0
+                            ) /
+                            (data.diamondFunds.length * 2000)) *
+                            100 +
+                          "%",
+                      }}
+                      className="level"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              <p className="note">
+                <span>NOTE: </span>Total Return Amount will take av. 3 months.
+              </p>
+            </div>
+
+            <div className="fund-add">
+              <p>
+                <span>{data.canBuyDiamond.length}</span> Add New Diamond Fund
+              </p>
+              <div>
+                <AddIcon className="i" />
+              </div>
+              <p className="note">
+                <span>NOTE: </span>Total Return Amount will take av. 3 months.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="golden-bg">
+          <h3> 🥇 Golden Funds 🥇 </h3>
+          <div className="wtb responsive">
+            {data.goldenFunds.map((item) => (
+              <div className="fund">
+                <div className="return">
+                  <FileDownloadDoneIcon className="i" />
+
+                  <span> ₹:{item.fund}.00/-</span>
+
+                  <span className="diamond-id">Golden ID: 105</span>
+                </div>
+
+                <div className="date">
+                  <span>Buy At: </span>
+                  <span>{formatDate(item.buyTime)}</span>
+                </div>
+                <div className="percent">
+                  <div className="info">
+                    <span className="oma"> {item.fund}/-</span>
+                    <span className="perti">{(item.fund / 1000) * 100}%</span>
+                    <span className="out_of">1000/- </span>
+                  </div>
+                  <div className="level-bg">
+                    <div
+                      style={{ width: (item.fund / 1000) * 100 + "%" }}
+                      className="level"
+                    ></div>
+                  </div>
+                </div>
+                <div
+                  className={
+                    input_data.mrHistoryToggle
+                      ? "return-history expend"
+                      : "return-history"
+                  }
+                >
+                  <div className="toggle">
+                    <label htmlFor="m-r-history-toggle">
+                      Money Return History
+                    </label>
+                    <input
+                      onChange={(e) =>
+                        setInputData((prev) => ({
+                          ...prev,
+                          mrHistoryToggle: !input_data.mrHistoryToggle,
+                        }))
+                      }
+                      checked={input_data.mrHistoryToggle}
+                      id="m-r-history-toggle"
+                      type="checkbox"
+                      hidden
+                    />
+                    <KeyboardArrowDownIcon
+                      className={input_data.mrHistoryToggle ? "ir" : "i"}
+                    />
+                  </div>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>ID</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {item.funding.map((fund) => (
+                        <tr className={true ? "upcoming" : ""}>
+                          <td>{fund.many}</td>
+                          <td>{formatDate(fund.when)}</td>
+                          <td>{fund._id}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p>
+                    Money Expend History: 250-&gt;ID:200, 125-&gt;ID:100,
+                    10-&gt;Refferal, 115-&gt;service{" "}
+                  </p>
+                </div>
+                <p className="note">
+                  <span>NOTE: </span>Total Return Amount will take av. 3 months.
+                </p>
+              </div>
+            ))}
+            <div className="fund total golden">
+              <h3>Total Diamond Funds</h3>
+              <div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Diamond</th>
+                      <th>X</th>
+                      <th>Value</th>
+                      <th>EQ</th>
+                      <th>Total</th>
+                      <th>Describe</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{data.goldenFunds.length}</td>
+                      <td>X</td>
+                      <td>500</td>
+                      <td>=</td>
+                      <td>{data.goldenFunds.length * 500}</td>
+                      <td>Invested</td>
+                    </tr>
+                    <tr>
+                      <td>{data.goldenFunds.length}</td>
+                      <td>X</td>
+                      <td>1000</td>
+                      <td>=</td>
+                      <td>{data.goldenFunds.length * 1000}</td>
+                      <td>Incoming</td>
+                    </tr>
+                    <tr>
+                      <td>Total</td>
+                      <td>count</td>
+                      <td>of</td>
+                      <td> returned </td>
+                      <td>
+                        {data.goldenFunds
+                          .map((item) => item.fund)
+                          .reduce(
+                            (accumulator, currentValue) =>
+                              accumulator + currentValue,
+                            0
+                          )}
+                      </td>
+                      <td>Returned</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="percent">
+                  <div className="info">
+                    <span className="oma">
+                      {" "}
+                      {data.goldenFunds
+                        .map((item) => item.fund)
+                        .reduce(
+                          (accumulator, currentValue) =>
+                            accumulator + currentValue,
+                          0
+                        )}
+                      /-
+                    </span>
+                    <span className="perti">
+                      {(data.goldenFunds
+                        .map((item) => item.fund)
+                        .reduce(
+                          (accumulator, currentValue) =>
+                            accumulator + currentValue,
+                          0
+                        ) /
+                        (data.goldenFunds.length * 1000)) *
+                        100}
+                      %
+                    </span>
+                    <span className="out_of">
+                      {data.goldenFunds.length * 1000}/-{" "}
+                    </span>
+                  </div>
+                  <div className="level-bg">
+                    <div
+                      style={{
+                        width:
+                          (data.goldenFunds
+                            .map((item) => item.fund)
+                            .reduce(
+                              (accumulator, currentValue) =>
+                                accumulator + currentValue,
+                              0
+                            ) /
+                            (data.goldenFunds.length * 1000)) *
+                            100 +
+                          "%",
+                      }}
+                      className="level"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              <p className="note">
+                <span>NOTE: </span>Total Return Amount will take av. 3 months.
+              </p>
+            </div>
+            <div className="fund-add">
+              <p>
+                <span>{data.canBuyGolden.length}</span> Add New Diamond Fund
+              </p>
+              <div>
+                <AddIcon className="i" />
+              </div>
+              <p className="note">
+                <span>NOTE: </span>Total Return Amount will take av. 3 months.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="fund total golden diamond">
+          <h3> 💎 Total Diamond & Golden Funds 🥇 </h3>
+          <div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Golden</th>
+                  <th>
+                    <AddIcon />
+                  </th>
+                  <th>Diamond</th>
+                  <th>EQ</th>
+                  <th>Total</th>
+                  <th>Describe</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{data.goldenFunds.length * 500}</td>
+                  <td>
+                    <AddIcon />
+                  </td>
+                  <td>{data.diamondFunds.length * 1000}</td>
+                  <td>=</td>
+                  <td>
+                    {data.goldenFunds.length * 500 +
+                      data.diamondFunds.length * 1000}
+                  </td>
+                  <td>Invested</td>
+                </tr>
+                <tr>
+                  <td>{data.goldenFunds.length * 500 * 2}</td>
+                  <td>
+                    <AddIcon />
+                  </td>
+                  <td>{data.diamondFunds.length * 1000 * 2}</td>
+                  <td>=</td>
+                  <td>
+                    {data.goldenFunds.length * 500 * 2 +
+                      data.diamondFunds.length * 1000 * 2}
+                  </td>
+                  <td>Incoming</td>
+                </tr>
+                <tr>
+                  <td>Total</td>
+                  <td>count</td>
+                  <td>of both</td>
+                  <td> returned </td>
+                  <td>
+                    {data.goldenFunds
+                      .map((item) => item.fund)
+                      .reduce(
+                        (accumulator, currentValue) =>
+                          accumulator + currentValue,
+                        0
+                      ) +
+                      data.diamondFunds
+                        .map((item) => item.fund)
+                        .reduce(
+                          (accumulator, currentValue) =>
+                            accumulator + currentValue,
+                          0
+                        )}
+                  </td>
+                  <td>Returned</td>
+                </tr>
+              </tbody>
+            </table>
+            <div className="percent">
+              <div className="info">
+                <span className="oma">
+                  {" "}
+                  {data.goldenFunds
+                    .map((item) => item.fund)
+                    .reduce(
+                      (accumulator, currentValue) => accumulator + currentValue,
+                      0
+                    ) +
+                    data.diamondFunds
+                      .map((item) => item.fund)
+                      .reduce(
+                        (accumulator, currentValue) =>
+                          accumulator + currentValue,
+                        0
+                      )}
+                  /-
+                </span>
+                <span className="perti">
+                  {((data.goldenFunds
+                    .map((item) => item.fund)
+                    .reduce(
+                      (accumulator, currentValue) => accumulator + currentValue,
+                      0
+                    ) +
+                    data.diamondFunds
+                      .map((item) => item.fund)
+                      .reduce(
+                        (accumulator, currentValue) =>
+                          accumulator + currentValue,
+                        0
+                      )) /
+                    (data.goldenFunds.length * 500 * 2 +
+                      data.diamondFunds.length * 1000 * 2)) *
+                    100}
+                  %
+                </span>
+                <span className="out_of">
+                  {" "}
+                  {data.goldenFunds.length * 500 * 2 +
+                    data.diamondFunds.length * 1000 * 2}
+                  /-{" "}
+                </span>
+              </div>
+              <div className="level-bg">
+                <div
+                  style={{
+                    width:
+                      ((data.goldenFunds
+                        .map((item) => item.fund)
+                        .reduce(
+                          (accumulator, currentValue) =>
+                            accumulator + currentValue,
+                          0
+                        ) +
+                        data.diamondFunds
+                          .map((item) => item.fund)
+                          .reduce(
+                            (accumulator, currentValue) =>
+                              accumulator + currentValue,
+                            0
+                          )) /
+                        (data.goldenFunds.length * 500 * 2 +
+                          data.diamondFunds.length * 1000 * 2)) *
+                        100 +
+                      "%",
+                  }}
+                  className="level"
+                ></div>
+              </div>
+            </div>
+            <p className="note">
+              <span>NOTE: </span>Total Return Amount will take av. 3 months.
+            </p>
+          </div>
+        </div>
+
+        {/* <div className="btns">
+          <button onClick={(e) => navigate("/signup")}> Add New User</button>
+        </div> */}
+        <div className="responsive">
+          <div className="border-label">
+            <span>Primary Phone Number</span>
+            <p>6205085598</p>
+          </div>
+          <div className="border-label">
+            <span>Primary Email ID</span>
+            <p>krabi6563@gmail.com</p>
+          </div>
+        </div>
+
+        <div className="responsive">
+          <div className="border-label">
+            <span>Top Up From Bank</span>
+            <input
+              type="number"
+              placeholder="Amount..."
+              onChange={handleChange}
+              name="topup"
+              id=""
+              value={input_data.topup}
+            />
+            <br />
+            <button onClick={topup}>TopUp</button>
+          </div>
+          <div className="border-label">
+            <span>Withdraw on Bank</span>
+            <input
+              type="number"
+              placeholder="Amount..."
+              onChange={handleChange}
+              name="withDraw"
+              id=""
+              value={input_data.withDraw}
+            />
+            <br />
+            <button onClick={withDraw}>Withdraw</button>
+          </div>
+          <div className="border-label">
+            <span>Recharge Now</span>
+            <div className="d-g">
+              <select
+                onChange={handleChange}
+                value={input_data.rechNumber}
+                name="rechNumber"
+                id="rechargeNums"
+              >
+                <option value="0">select contact</option>
+                {/* {data.rechNums.map((ob, i) => {
                     return (
                       <option key={i} value={ob.rechNumber}>
                         {ob.rechNumber}
                       </option>
                     );
                   })} */}
-                </select>
-                <input type="number" placeholder="Amount..." />
-              </div>
+              </select>
+              <input type="number" placeholder="Amount..." />
+            </div>
 
-              <button>Recharge Now</button>
-            </div>
+            <button>Recharge Now</button>
           </div>
+        </div>
 
-          <div className="choose-fund">
-            <h2>Choose Funds</h2>
-            <div className="notes">
-              <div className="diamond note">
-                <label htmlFor="diamond">Diamond : </label>
-                <select
-                  name="diamond"
-                  id="diamond"
-                  value={input_data.diamond}
-                  onChange={handleChange}
-                >
-                  <option value="0">0</option>
-                  {data.canBuyDiamond.map((v, i) => {
-                    return <option value={v}>{v + " X"}</option>;
-                  })}
-                </select>
-                <p>
-                  Invest: {input_data.diamond * 1000}; Return:{" "}
-                  {input_data.diamond * 2000} in under 3 months
-                </p>
-              </div>
-              <div className="golden note">
-                <label htmlFor="golden">Golden : </label>
-                <select
-                  name="golden"
-                  id="golden"
-                  value={input_data.golden}
-                  onChange={handleChange}
-                >
-                  <option value="0">0</option>
-                  {data.canBuyGolden.map((v, i) => {
-                    return <option value={v}>{v + " X"}</option>;
-                  })}
-                </select>
-                <p>
-                  Invest: {input_data.golden * 500}; Return:{" "}
-                  {input_data.golden * 1000} in under 3 months
-                </p>
-              </div>
+        <div className="choose-fund">
+          <h2>Choose Funds</h2>
+          <div className="notes">
+            <div className="diamond note">
+              <label htmlFor="diamond">Diamond : </label>
+              <select
+                name="diamond"
+                id="diamond"
+                value={input_data.diamond}
+                onChange={handleChange}
+              >
+                <option value="0">0</option>
+                {data.canBuyDiamond.map((v, i) => {
+                  return <option value={v}>{v + " X"}</option>;
+                })}
+              </select>
+              <p>
+                Invest: {input_data.diamond * 1000}; Return:{" "}
+                {input_data.diamond * 2000} in under 3 months
+              </p>
             </div>
-            <p>
-              Total Invest:{" "}
-              {input_data.diamond * 1000 + input_data.golden * 500} Return:{" "}
-              {input_data.golden * 1000 + input_data.diamond * 2000} in under 3
-              months
-            </p>
-            <div className="btn">
-              <button>
-                Invest {input_data.diamond * 1000 + input_data.golden * 500}
-              </button>
+            <div className="golden note">
+              <label htmlFor="golden">Golden : </label>
+              <select
+                name="golden"
+                id="golden"
+                value={input_data.golden}
+                onChange={handleChange}
+              >
+                <option value="0">0</option>
+                {data.canBuyGolden.map((v, i) => {
+                  return <option value={v}>{v + " X"}</option>;
+                })}
+              </select>
+              <p>
+                Invest: {input_data.golden * 500}; Return:{" "}
+                {input_data.golden * 1000} in under 3 months
+              </p>
             </div>
           </div>
-          <div className="msg">
-            <div className="msgs" onClick={(e) => navigate("/messages/")}>
-              Messages <span>9</span>
+          <p>
+            Total Invest: {input_data.diamond * 1000 + input_data.golden * 500}{" "}
+            Return: {input_data.golden * 1000 + input_data.diamond * 2000} in
+            under 3 months
+          </p>
+          <div className="btn">
+            <button>
+              Invest {input_data.diamond * 1000 + input_data.golden * 500}
+            </button>
+          </div>
+        </div>
+        <div className="msg">
+          <div className="msgs" onClick={(e) => navigate("/messages/")}>
+            Messages <span>9</span>
+          </div>
+          <div>Last Message</div>
+          <div
+            className="lastMessage"
+            onClick={(e) => navigate("/messages/" + data.lastMesssge.referCode)}
+          >
+            <figure>
+              <img
+                src="https://th.bing.com/th/id/OIP.vAuCou6PorBYkntC17e0QAAAAA?rs=1&pid=ImgDetMain"
+                alt="user pic"
+              />
+            </figure>
+            <div className="info">
+              <h3>{"Bikram Kumar"}</h3>
+              <span>{"hi Dada"} </span>
             </div>
-            <div>Last Message</div>
-            <div
-              className="lastMessage"
-              onClick={(e) =>
-                navigate("/messages/" + data.lastMesssge.referCode)
-              }
-            >
-              <figure>
-                <img
-                  src="https://th.bing.com/th/id/OIP.vAuCou6PorBYkntC17e0QAAAAA?rs=1&pid=ImgDetMain"
-                  alt="user pic"
-                />
-              </figure>
-              <div className="info">
-                <h3>{"Bikram Kumar"}</h3>
-                <span>{"hi Dada"} </span>
-              </div>
-              <div className="time">
-                <div>12:00 AM</div>
-                <span>10</span>
-              </div>
+            <div className="time">
+              <div>12:00 AM</div>
+              <span>10</span>
             </div>
           </div>
-          {/* 
+        </div>
+        {/* 
           <div>{data.name}</div>
           <div>{data.Balance}</div>
           <div>{data.RegisteredAt}</div>
@@ -742,12 +1300,11 @@ const Dashboard: React.FC = () => {
               <button onClick={setReferCode}> Set Refer Code</button>
             </div>
           </div> */}
-        </div>
-      </>
-    ) : (
-      <Loding />
-    );
-  }
+      </div>
+    </>
+  ) : (
+    <Loding />
+  );
 };
 
 export default Dashboard;

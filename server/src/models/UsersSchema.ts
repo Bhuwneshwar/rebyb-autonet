@@ -170,83 +170,81 @@ const userSchema = new mongoose.Schema<IUser>(
       type: String,
     },
 
-    password: {
-      password: String,
-      accessToken: String,
+    password: String,
+    accessToken: String,
 
-      RegisteredAt: {
-        type: Date,
-        default: Date.now,
-      },
-      Balance: {
-        type: Number,
-        default: 0,
-      },
-      updatedDate: {
-        type: Date,
-        default: Date.now(),
-      },
-      incomes: {
-        referralAmount: [
-          {
-            amount: Number,
-            time: { type: Date, default: Date.now() },
-            from: String,
-          },
-        ],
-        topupAmount: [
-          {
-            amount: Number,
-            time: { type: Date, default: Date.now() },
-            from: String,
-          },
-        ],
-        userAmount: [
-          {
-            amount: Number,
-            time: { type: Date, default: Date.now() },
-            from: String,
-          },
-        ],
-      },
-
-      expenses: {
-        recharge: [
-          {
-            contact: Number,
-            amount: Number,
-            validity: { type: Number, default: 0 },
-            time: { type: Date, default: Date.now() },
-          },
-        ],
-        userSend: [
-          {
-            time: { type: Date, default: Date.now() },
-            to: String,
-            from: String,
-            amount: Number,
-          },
-        ],
-        withdrawOnBank: [
-          {
-            time: { type: Date, default: Date.now() },
-            to: String,
-            amount: Number,
-          },
-        ],
-      },
-      referCode: { type: String, unique: true },
-      withdrawPerc: { type: Number, default: 50 },
-      Priority: {
-        no_1: { type: String, default: "recharge" },
-        no_2: { type: String, default: "nextInvest" },
-        no_3: { type: String, default: "withdraw" },
-      },
-      nextInvestCountG: { type: Number, default: 0 },
-      nextInvestCountD: { type: Number, default: 0 },
-      nextInvestForMoney: { type: Number, default: 0 },
-      userType: { type: String, default: "permanent" },
+    RegisteredAt: {
+      type: Date,
+      default: Date.now,
     },
+    Balance: {
+      type: Number,
+      default: 0,
+    },
+    updatedDate: {
+      type: Date,
+      default: Date.now(),
+    },
+    incomes: {
+      referralAmount: [
+        {
+          amount: Number,
+          time: { type: Date, default: Date.now() },
+          from: String,
+        },
+      ],
+      topupAmount: [
+        {
+          amount: Number,
+          time: { type: Date, default: Date.now() },
+          from: String,
+        },
+      ],
+      userAmount: [
+        {
+          amount: Number,
+          time: { type: Date, default: Date.now() },
+          from: String,
+        },
+      ],
+    },
+
+    expenses: {
+      recharge: [
+        {
+          contact: Number,
+          amount: Number,
+          validity: { type: Number, default: 0 },
+          time: { type: Date, default: Date.now() },
+        },
+      ],
+      userSend: [
+        {
+          time: { type: Date, default: Date.now() },
+          to: String,
+          from: String,
+          amount: Number,
+        },
+      ],
+      withdrawOnBank: [
+        {
+          time: { type: Date, default: Date.now() },
+          to: String,
+          amount: Number,
+        },
+      ],
+    },
+    referCode: { type: String, unique: true, required: true },
+    withdrawPerc: { type: Number, default: 50 },
+    Priority: {
+      no_1: { type: String, default: "recharge" },
+      no_2: { type: String, default: "nextInvest" },
+      no_3: { type: String, default: "withdraw" },
+    },
+    nextInvestCountG: { type: Number, default: 0 },
+    nextInvestCountD: { type: Number, default: 0 },
+    nextInvestForMoney: { type: Number, default: 0 },
+    userType: { type: String, default: "permanent" },
   },
   {
     timestamps: true,

@@ -16,7 +16,7 @@ import {
   emailOtpSend,
   emailOtpVerify,
 } from "../controllers/OTP"; // Assuming controllers export functions
-import generateCertificate from "../middleware/GenerateCertificate";
+import generateCertificate from "../middleware/GenerateAuto-Net-card";
 import cookieTokenVerifyOptional from "../middleware/cookieTokenVerifyOptional";
 
 router.route("/registration").get(registration).post(registrationPost);
@@ -33,6 +33,6 @@ router
 router.route("/phone/otp/send").post(cookieTokenVerifyOptional, phoneOtpSend);
 router.route("/email/otp/send").post(cookieTokenVerifyOptional, emailOtpSend);
 // router.route('/pdf/download').get(generateCertificate); // Commented out
-router.route("/pdf/:name").get(generateCertificate); // Assuming name is a string parameter
+router.route("/pdf/:identifyId").get(generateCertificate); // Assuming name is a string parameter
 
 export default router;

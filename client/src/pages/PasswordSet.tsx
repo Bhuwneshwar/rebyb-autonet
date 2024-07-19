@@ -77,7 +77,7 @@ const PasswordSet = () => {
 
   return (
     <div className="main">
-      <Navbar />
+      {/* <Navbar /> */}
       <div className="login-form">
         <form onSubmit={(e) => e.preventDefault()}>
           <h1>PASSWORD SET</h1>

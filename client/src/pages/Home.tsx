@@ -1,6 +1,7 @@
 import { toast } from "react-toastify";
 import Footer from "../components/Footer";
 import SlideableDiv from "../components/Dragging";
+import hero from "../assets/Screenshot 2024-07-09 110058.png";
 const Home = () => {
   console.log({ toast });
   const notify = () => {
@@ -24,6 +25,8 @@ const Home = () => {
 
   return (
     <div className="App">
+      <img src={hero} alt="df" />
+
       <h1>React Toastify Example</h1>
       <button onClick={notify}>Show Toast Messages</button>
       <SlideableDiv />

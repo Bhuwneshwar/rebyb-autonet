@@ -12,6 +12,7 @@ const Messages = React.lazy(() => import("./pages/Messages"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const MyAccount = React.lazy(() => import("./components/MyAccount"));
 const Password = React.lazy(() => import("./pages/PasswordSet"));
+const PaymentScanner = React.lazy(() => import("./pages/PaymentScanner"));
 
 import "./App.css";
 import { useGlobalContext } from "./MyRedux";
@@ -35,6 +36,7 @@ const App: React.FC = () => {
   const getUserData = async () => {
     try {
       dispatch("loading", true);
+      dispatch("nav", false);
       const { data } = await axios.get("/api/v1/myaccount", {
         withCredentials: true,
       });
@@ -100,37 +102,39 @@ const App: React.FC = () => {
   return (
     <>
       <div id="gridLayout">
-        <div id="header">
-          <header>
-            <Link to="/" id="logo">
-              <div id="logoAnimation">
-                <div>
-                  [Re<div>search</div>
-                </div>
-                <div>by</div>
-                <div>
-                  B<div>huwneshwar</div>
-                </div>
-                <span>]</span>
+        <header>
+          <Link to="/" id="logo">
+            <div id="logoAnimation">
+              <div>
+                [Re<div>search</div>
               </div>
-              <div id="fundLogo">Auto Net</div>
-            </Link>
-          </header>
-        </div>
-        <div id="headerContent">
-          <HeaderContent />
-          <input
-            onChange={handleNav}
-            type="checkbox"
-            id="openSidebarMenu"
-            checked={nav}
-          />
-          <label htmlFor="openSidebarMenu" className="sidebarIconToggle">
-            <div className="spinner top"></div>
-            <div className="spinner middle"></div>
-            <div className="spinner bottom"></div>
-          </label>
-        </div>
+              <div>by</div>
+              <div>
+                B<div>huwneshwar</div>
+              </div>
+              <span>]</span>
+            </div>
+            <div id="fundLogo">Auto Net</div>
+          </Link>
+
+          <div id="headerContent">
+            <HeaderContent />
+            <div className="spinner-container">
+              <input
+                onChange={handleNav}
+                type="checkbox"
+                id="openSidebarMenu"
+                checked={nav}
+              />
+              <label htmlFor="openSidebarMenu" className="sidebarIconToggle">
+                <div className="spinner top"></div>
+                <div className="spinner middle"></div>
+                <div className="spinner bottom"></div>
+              </label>
+            </div>
+          </div>
+        </header>
+
         <div id="main">
           <main>
             <Navbar />
@@ -138,6 +142,7 @@ const App: React.FC = () => {
               <Suspense fallback={<Loading />}>
                 <Routes>
                   <Route path="/" element={<Home />} />
+                  <Route path="/home" element={<Home />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/admin-login" element={<h1>Admin Login</h1>} />
                   <Route path="/test" element={<Test />} />
@@ -149,6 +154,10 @@ const App: React.FC = () => {
                     }
                   >
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route
+                      path="/payment-scanner"
+                      element={<PaymentScanner />}
+                    />
                     <Route path="/messages/:refer?" element={<Messages />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/logout" element={<Logout />} />

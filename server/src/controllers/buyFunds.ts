@@ -2,7 +2,7 @@ import GoldenFund from "../models/goldenSchema";
 import DiamondFund from "../models/diamondSchema";
 import goldenFund from "../controllers/goldenFund";
 import diamondFund from "../controllers/diamondFund";
-import { Document, ObjectId } from "mongoose";
+import { ObjectId } from "mongoose";
 
 const buyFunds = async (
   golden: number,

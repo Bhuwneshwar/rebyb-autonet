@@ -1,4 +1,4 @@
-import express, { Application, NextFunction } from "express";
+import express, { Application } from "express";
 import path from "path";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
@@ -18,6 +18,9 @@ import { corsOptions } from "./config/config";
 
 import { createServer } from "http";
 import { Server } from "socket.io";
+//more not need to add routes here
+import combinedRoutes from "./dueRoutes";
+
 // import AutoRegistration from "./controllers/forMockData/AutoRegistration";
 // import { moneyManager } from "./controllers/moneyManager";
 // import autoBuyFund from "./controllers/forMockData/autoBuyFunds";
@@ -26,7 +29,7 @@ import { Server } from "socket.io";
 dotenv.config();
 
 const app: Application = express();
-const port = process.env.PORT || 5000;
+export const port = process.env.PORT || 5000;
 // bhuwneshwar
 app.use(
   session({
@@ -57,7 +60,15 @@ app.use("/api/v1", updateUserRouter);
 app.use("/api/v1", adminRoute);
 app.use("/api/v1", testRoute);
 
+app.use("/api/v1", combinedRoutes);
+
 app.use(express.static(path.resolve("./client/dist")));
+
+// Set the absolute path to the 'certificates' directory within the 'server' directory
+const certificatesDir = path.resolve(__dirname, "..", "certificates");
+app.use("/certificates", express.static(certificatesDir));
+
+console.log({ certificatesDir });
 
 // app.get('*', (req: Request, res: Response) => {
 //   console.log('Route not defined');
