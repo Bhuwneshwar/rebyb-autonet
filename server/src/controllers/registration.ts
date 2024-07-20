@@ -63,10 +63,11 @@ interface IReq extends Request {
 export const registrationPost = async (req: IReq, res: Response) => {
   try {
     console.log(req.body);
+    console.log("session: data", { ...req.session });
 
     const validate = await validation(req);
-    if (!validate.status) {
-      return res.send({ message: validate.message, success: false });
+    if (!validate?.status) {
+      return res.send({ error: validate.message, success: false });
     }
 
     const Ok = validate.data;
@@ -220,7 +221,7 @@ export const registrationPost = async (req: IReq, res: Response) => {
       contact: Ok.phoneVerified,
     });
 
-    req.session.phoneVerified = 0;
+    req.session.phoneVerified = undefined;
     req.session.phoneVerifiedTime = 0;
     req.session.emailVerified = "";
     req.session.emailVerifiedTime = 0;
@@ -234,7 +235,7 @@ export const checkNumber = async (req: Request, res: Response) => {
     const { mob } = req.query;
     console.log(mob);
 
-    const nums = await User.countDocuments({
+    const exist = await User.findOne({
       $or: [
         { "rechargeNum1.number": mob },
         { "rechargeNum2.number": mob },
@@ -242,10 +243,13 @@ export const checkNumber = async (req: Request, res: Response) => {
       ],
     });
 
-    console.log(nums);
-    res.send("this number already added on " + nums + " accounts");
+    console.log({ exist });
+    if (exist) return res.send({ error: "this number already!" });
+    else return res.send({ success: true });
+    // res.send("this number already added on " + nums + " accounts");
   } catch (e) {
     console.log(e);
+    res.status(500).send({ error: "Server Error" });
   }
 };
 

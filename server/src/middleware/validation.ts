@@ -1,8 +1,46 @@
 import { Request } from "express";
 import material from "../utils/Materials.json";
 import identification from "../middleware/identification";
+import { IReq } from "../types";
 
-const validation = async (req: Request) => {
+interface IBody {
+  name: string;
+  age: number;
+  gender: string;
+  phoneNumber: number;
+  email: string;
+  diamond: number;
+  NextInvest: boolean;
+  golden: number;
+  rechNum1: string;
+  rechNum2: string;
+  rechNum3: string;
+  opera1: string;
+  opera2: string;
+  opera3: string;
+  state1: string;
+  state2: string;
+  state3: string;
+  autoRecharge: boolean;
+  transactionMethod: string;
+  upi: string;
+  ifsc: string;
+  bank: string;
+  confirmBank: string;
+  autoWithdraw: boolean;
+  refer: string;
+  setRefer: string;
+  withdraw_perc: number;
+  priority: string[];
+  ExistingValidityOne: number;
+  ExistingValiditytwo: number;
+  ExistingValiditythree: number;
+  SelectedPlan1: string;
+  SelectedPlan2: string;
+  SelectedPlan3: string;
+}
+
+const validation = async (req: IReq) => {
   try {
     let rechNum = 0;
     let {
@@ -28,7 +66,7 @@ const validation = async (req: Request) => {
       upi,
       ifsc,
       bank,
-      reBank,
+      confirmBank,
       autoWithdraw,
       refer,
       setRefer,
@@ -40,7 +78,7 @@ const validation = async (req: Request) => {
       SelectedPlan1,
       SelectedPlan2,
       SelectedPlan3,
-    } = req.body;
+    } = req.body as IBody;
 
     const Ok: any = {};
 
@@ -76,7 +114,7 @@ const validation = async (req: Request) => {
     if (req.session.phoneVerifiedTime) {
       dueTime = Date.now() - req.session.phoneVerifiedTime || 0;
       if (phoneNumber === req.session.phoneVerified && dueTime < 60 * 60000) {
-        Ok["contact"] = req.session.phoneVerified;
+        Ok["phoneVerified"] = req.session.phoneVerified;
       } else {
         return {
           status: false,
@@ -234,8 +272,120 @@ const validation = async (req: Request) => {
     }
 
     // Recharge 2 validation (similar structure to Recharge 1)
+    if (rechNum2 !== "") {
+      if (typeof rechNum2 === "string") {
+        const filteredNum2 = validateNumber(rechNum2);
+        if (filteredNum2) {
+          rechNum++;
+          Ok["rechNum2"] = filteredNum2;
+        } else {
+          return { status: false, message: "Recharge number 2 is invalid" };
+        }
 
-    // Recharge 3 validation (similar structure to Recharge 1)
+        if (typeof state2 === "string") {
+          if (validateState(state2)) {
+            Ok["state2"] = state2;
+          } else {
+            return { status: false, message: "Invalid state2" };
+          }
+        } else {
+          return {
+            status: false,
+            message: "State is required if number is valid",
+          };
+        }
+
+        if (typeof opera2 === "string") {
+          if (validateOperator(opera2)) {
+            Ok["opera2"] = opera2;
+          } else {
+            return { status: false, message: "Invalid operator 2" };
+          }
+        } else {
+          return {
+            status: false,
+            message: "Operator is required if number is valid",
+          };
+        }
+
+        if (
+          typeof SelectedPlan2 === "string" &&
+          checkPlan(opera2, SelectedPlan2)
+        ) {
+          Ok["SelectedPlan2"] = SelectedPlan2;
+        } else {
+          return { status: false, message: "SelectedPlan2 is required" };
+        }
+
+        if (
+          typeof +ExistingValiditytwo === "number" &&
+          +ExistingValiditytwo >= 0 &&
+          +ExistingValiditytwo <= 365
+        ) {
+          Ok["ExistingValiditytwo"] = +ExistingValiditytwo;
+        } else {
+          return { status: false, message: "Invalid ExistingValiditytwo" };
+        }
+      }
+    }
+
+    // Recharge 3 validation (similar structure to Recharge 2)
+    if (rechNum3 !== "") {
+      if (typeof rechNum3 === "string") {
+        const filteredNum3 = validateNumber(rechNum3);
+        if (filteredNum3) {
+          rechNum++;
+          Ok["rechNum3"] = filteredNum3;
+        } else {
+          return { status: false, message: "Recharge number 3 is invalid" };
+        }
+
+        if (typeof state3 === "string") {
+          if (validateState(state3)) {
+            Ok["state3"] = state3;
+          } else {
+            return { status: false, message: "Invalid state3" };
+          }
+        } else {
+          return {
+            status: false,
+            message: "State is required if number is valid",
+          };
+        }
+
+        if (typeof opera3 === "string") {
+          if (validateOperator(opera3)) {
+            Ok["opera3"] = opera3;
+          } else {
+            return { status: false, message: "Invalid operator 3" };
+          }
+        } else {
+          return {
+            status: false,
+            message: "Operator is required if number is valid",
+          };
+        }
+
+        if (
+          typeof SelectedPlan3 === "string" &&
+          checkPlan(opera3, SelectedPlan3)
+        ) {
+          Ok["SelectedPlan3"] = SelectedPlan3;
+        } else {
+          return { status: false, message: "SelectedPlan3 is required" };
+        }
+
+        if (
+          typeof +ExistingValiditythree === "number" &&
+          +ExistingValiditythree >= 0 &&
+          +ExistingValiditythree <= 365
+        ) {
+          Ok["ExistingValiditythree"] = +ExistingValiditythree;
+        } else {
+          return { status: false, message: "Invalid ExistingValiditythree" };
+        }
+      }
+    }
 
     if (rechNum > golden + diamond) {
       return {
@@ -268,11 +418,62 @@ const validation = async (req: Request) => {
             return { status: false, message: "Please fill out UPI Code" };
           }
           break;
-        case "netbanking":
-          // Handle netbanking validation
+        case "net banking":
+          if (typeof ifsc === "string") {
+            const regexIfsc = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+            if (regexIfsc.test(ifsc)) {
+              Ok["ifsc"] = ifsc;
+            } else return { status: false, message: "IFSC code is invalid" };
+          } else return { status: false, message: "please fill out IFSC Code" };
+
+          if (typeof bank === "string") {
+            const regexBank = /^[0-9]{9,18}$/;
+            if (regexBank.test(bank)) {
+            } else
+              return { status: false, message: "account number is invalid" };
+          } else
+            return { status: false, message: "please fill out Account number" };
+
+          if (bank === confirmBank) {
+            //req.session.bank = bank;
+            //req.session.transactionMethod = "both";
+            Ok["bank"] = bank;
+            Ok["transactionMethod"] = transactionMethod;
+          } else
+            return { status: false, message: "Account number can't matching" };
+
           break;
         case "both":
-          // Handle both validation
+          if (typeof upi === "string") {
+            const regexUpi = /^[\w.-]+@[\w-]+(\.[\w-]+)*$/;
+            if (regexUpi.test(upi)) {
+              Ok["upi"] = upi;
+            } else return { status: false, message: "UPI code is invalid" };
+          } else return { status: false, message: "please fill out UPI Code" };
+
+          if (typeof ifsc === "string") {
+            const regexIfsc = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+            if (regexIfsc.test(ifsc)) {
+              Ok["ifsc"] = ifsc;
+            } else return { status: false, message: "IFSC code is invalid" };
+          } else return { status: false, message: "please fill out IFSC Code" };
+
+          if (typeof bank === "string") {
+            const regexBank = /^[0-9]{9,18}$/;
+            if (regexBank.test(bank)) {
+            } else
+              return { status: false, message: "account number is invalid" };
+          } else
+            return { status: false, message: "please fill out Account number" };
+
+          if (bank === confirmBank) {
+            //req.session.bank = bank;
+            //req.session.transactionMethod = "both";
+            Ok["bank"] = bank;
+            Ok["transactionMethod"] = transactionMethod;
+          } else
+            return { status: false, message: "Account number can't matching" };
+
           break;
         default:
           return { status: false, message: "Invalid transactionMethod" };
@@ -312,11 +513,20 @@ const validation = async (req: Request) => {
       };
     }
 
-    if (typeof priority === "boolean") {
-      Ok["priority"] = priority;
-    } else {
-      return { status: false, message: "priority should be true or false" };
-    }
+    const checkPriority = (priority: string) => {
+      if (["recharge", "nextInvest", "withdraw"].includes(priority))
+        return true;
+      else return false;
+    };
+    if (Array.isArray(priority) && priority.length === 3) {
+      if (
+        checkPriority(priority[0]) &&
+        checkPriority(priority[1]) &&
+        checkPriority(priority[2])
+      ) {
+        Ok["priority"] = priority;
+      } else return { status: false, message: "invalid Priority!" };
+    } else return { status: false, message: "invalid Priority!" };
 
     return { status: true, message: "Ok", data: Ok };
   } catch (error) {

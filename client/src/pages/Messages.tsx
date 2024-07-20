@@ -5,6 +5,7 @@ import { useGlobalContext } from "../MyRedux";
 import Chat from "./Chat";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import PaymentUsingRazorpay from "../utils/PaymentUsingRazorpay";
+import { toast } from "react-toastify";
 
 interface UserMessages {
   name: string;
@@ -34,6 +35,7 @@ interface InputData {
   messageType: string;
   MoneyHelp?: number;
   Identifier?: string;
+  identifyId: string;
 }
 
 const Messages: React.FC = () => {
@@ -99,6 +101,7 @@ const Messages: React.FC = () => {
     PaidMoney: 0,
     messageId: "",
     messageType: "simpleMessage",
+    identifyId: "",
   });
 
   const handleChange = (
@@ -111,12 +114,13 @@ const Messages: React.FC = () => {
     });
   };
 
-  useEffect(() => {
-    initial();
-  }, []);
+  // useEffect(() => {
+  //   initial();
+  // }, []);
 
   useEffect(() => {
     if (refer) initialMessage();
+    else initial();
   }, [refer]);
 
   useEffect(() => {
@@ -143,7 +147,7 @@ const Messages: React.FC = () => {
 
   const initialMessage = async () => {
     try {
-      const { data } = await axios.get(`/api/messages/${refer}`, {
+      const { data } = await axios.get(`/api/v1/messages/${refer}`, {
         withCredentials: true,
       });
       console.log(data);
@@ -175,19 +179,22 @@ const Messages: React.FC = () => {
 
   const initial = async () => {
     try {
-      const { data } = await axios.get(`/api/messages`, {
+      dispatch("loading", true);
+      const { data } = await axios.get(`/api/v1/messages`, {
         withCredentials: true,
       });
-      console.log(data);
-      if (data.redirect) {
-        navigate(data.redirect);
-      }
-      if (data.names) {
-        setAllMessage(data.names);
+      console.log({ data });
+
+      if (data.success) {
+        setAllMessage(data.messages);
       }
     } catch (e) {
       console.log("initial error :", e);
+      toast.error("Failed to fetch messages", {
+        position: "bottom-center",
+      });
     }
+    dispatch("loading", false);
   };
 
   const sendMessage = async (req?: string) => {
@@ -214,7 +221,7 @@ const Messages: React.FC = () => {
       }
       alert(msg);
       const { data } = await axios.post(
-        `/api/message`,
+        `/api/v1/message-send`,
         {
           Message: msg,
           recieverId: refer,
@@ -223,7 +230,7 @@ const Messages: React.FC = () => {
           withCredentials: true,
         }
       );
-      console.log(data);
+      console.log({ data });
     } catch (e) {
       console.log("checkFunds error :", e);
     }
@@ -232,15 +239,15 @@ const Messages: React.FC = () => {
   const join = async () => {
     try {
       const { data } = await axios.post(
-        `/api/message/join`,
+        `/api/v1/message/join`,
         {
-          user: input_data.User,
+          user: input_data.identifyId,
         },
         {
           withCredentials: true,
         }
       );
-      console.log(data);
+      console.log({ data });
       if (data.referCode) {
         navigate("/messages/" + data.referCode);
       }
@@ -412,7 +419,13 @@ const Messages: React.FC = () => {
       <div className="container">
         <h2>Messages</h2>
         <div className="join-box">
-          <input type="text" placeholder="Refer Code/ID/Phone Number/Email" />
+          <input
+            onChange={handleChange}
+            value={input_data.identifyId}
+            type="text"
+            name="identifyId"
+            placeholder="Refer Code/ID/Phone Number/Email"
+          />
           <button onClick={join}>
             <ArrowForwardIosIcon />
           </button>
@@ -422,7 +435,7 @@ const Messages: React.FC = () => {
             <div
               className="lastMessage"
               key={user.referCode}
-              onClick={(e) => navigate("/messages/" + user.referCode)}
+              onClick={() => navigate("/messages/" + user.referCode)}
             >
               <figure>
                 <img

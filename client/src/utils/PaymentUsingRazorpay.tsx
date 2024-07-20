@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { FC, useEffect } from "react";
 
 interface Order {
   id: string;
@@ -15,7 +15,7 @@ interface PaymentUsingRazorpayProps {
   funName?: string;
 }
 
-const PaymentUsingRazorpay = ({
+const PaymentUsingRazorpay: FC<PaymentUsingRazorpayProps> = ({
   key,
   name,
   email,

@@ -1007,6 +1007,7 @@ const Profile: React.FC = () => {
                 name="name"
                 placeholder="Name"
                 required
+                autoFocus
               />
               <span
                 onClick={(e) =>

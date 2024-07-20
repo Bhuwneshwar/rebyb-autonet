@@ -461,7 +461,7 @@ const join = async (req: IReq, res: Response) => {
 
     if (identified.sameAccount) return res.send("this is same account ");
     if (identified.doc) {
-      return res.send({ referCode: identified.doc.referCode });
+      return res.send({ success: true, referCode: identified.doc.referCode });
     } else return res.send("invalid user ");
   } catch (e) {
     console.log("join error :", e);

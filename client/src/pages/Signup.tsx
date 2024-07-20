@@ -88,16 +88,16 @@ const Signup = () => {
     name: "Bhuwneshwar Mandal",
     age: 23,
     gender: "male",
-    phoneNumber: "6205085598",
+    phoneNumber: "62050",
     email: "krabi6563@gmail.com",
     phoneOtp: "",
     emailOtp: "",
     diamond: 6,
     golden: 6,
-    rechNum1: "6205085598",
+    rechNum1: "62050",
     rechNum2: "",
     rechNum3: "",
-    opera1: "jio",
+    opera1: "",
     opera2: "",
     opera3: "",
     state1: "Bihar",
@@ -150,7 +150,7 @@ const Signup = () => {
   }, []);
 
   useEffect(() => {
-    console.log(priority);
+    // console.log(priority);
     setDetails((prev) => ({
       ...prev,
       priority,
@@ -207,17 +207,21 @@ const Signup = () => {
     console.log(opt);
     return opt;
   };
+  // console.log("details", details);
 
-  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const submit = async () => {
     try {
-      console.log("details", details);
+      // alert("Submit");
+      // e.preventDefault();
+      dispatch("loading", true);
       const res = await axios.post("/api/v1/registration", details, {
         withCredentials: true,
       });
+      console.log({ data: res.data });
 
-      const { success, key, name, email, contact, order } = res.data;
-      if (success) {
+      if (res.data.success) {
+        const { key, name, email, contact, order } = res.data;
+
         PaymentUsingRazorpay({
           key,
           name,
@@ -226,12 +230,19 @@ const Signup = () => {
           order,
           callfuntion: paymentVerify,
         });
-      } else {
-        console.log(res);
+      }
+      if (res.data.error) {
+        toast.error(res.data.error, {
+          position: "bottom-center",
+        });
       }
     } catch (e) {
       console.log(e);
+      toast.error("Something went wrong! maybe invalid data", {
+        position: "bottom-center",
+      });
     }
+    dispatch("loading", false);
   };
 
   const paymentVerify = async (response: any) => {
@@ -322,6 +333,39 @@ const Signup = () => {
   useEffect(() => {
     checkNum3();
   }, [details.rechNum3]);
+  const selectPlan = (opera: string) => {
+    if (opera === "jio") {
+      return data?.RechargePlans.jio || [];
+    }
+    if (opera === "airtel") {
+      return data?.RechargePlans.airtel || [];
+    }
+    if (opera === "bsnl") {
+      return data?.RechargePlans.bsnl || [];
+    }
+    if (opera === "mtnl delhi") {
+      return data?.RechargePlans.mtnlDelhi || [];
+    }
+    if (opera === "mtnl mumbai") {
+      return data?.RechargePlans.mtnlMumbai || [];
+    }
+    if (opera === "vi") {
+      return data?.RechargePlans.vi || [];
+    }
+    return [];
+  };
+
+  useEffect(() => {
+    setCurOpera1(selectPlan(details.opera1));
+  }, [details.opera1]);
+
+  useEffect(() => {
+    setCurOpera2(selectPlan(details.opera2));
+  }, [details.opera2]);
+
+  useEffect(() => {
+    setCurOpera3(selectPlan(details.opera3));
+  }, [details.opera3]);
 
   const changeHandler = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -404,26 +448,66 @@ const Signup = () => {
 
   const sendEmailOtp = async () => {
     try {
+      dispatch("loading", true);
       const res = await axios.post("/api/v1/email/otp/send", {
         email: details.email,
       });
-      console.log(res);
-      setDetails({ ...details, emailOtp: res.data.otp });
+      console.log({ res: res.data });
+      if (res.data.success) {
+        toast.success("Otp sent successfully", {
+          position: "bottom-center",
+        });
+        setDetails({ ...details, emailOtp: res.data.otp });
+      }
+      if (res.data.warning) {
+        toast.warning(res.data.warning, {
+          position: "bottom-center",
+        });
+      }
+      if (res.data.error) {
+        toast.error(res.data.error, {
+          position: "bottom-center",
+        });
+      }
     } catch (e) {
       console.log(e);
+      toast.error("Failed to send Otp", {
+        position: "bottom-center",
+      });
     }
+    dispatch("loading", false);
   };
 
   const verifyEmailOtp = async () => {
     try {
+      dispatch("loading", true);
       const res = await axios.post("/api/v1/email/otp/verify", {
         email: details.email,
         userOtp: details.emailOtp,
       });
-      console.log(res);
+      console.log({ res: res.data });
+      if (res.data.success) {
+        toast.success("Email verified successfully", {
+          position: "bottom-center",
+        });
+      }
+      if (res.data.warning) {
+        toast.warning(res.data.warning, {
+          position: "bottom-center",
+        });
+      }
+      if (res.data.error) {
+        toast.error(res.data.error, {
+          position: "bottom-center",
+        });
+      }
     } catch (e) {
       console.log(e);
+      toast.error("Failed to verify email", {
+        position: "bottom-center",
+      });
     }
+    dispatch("loading", false);
   };
 
   const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
@@ -455,11 +539,7 @@ const Signup = () => {
   return (
     data && (
       <div className="signup-form">
-        <form
-          onSubmit={(e) => e.preventDefault()}
-          method="post"
-          accept-charset="utf-8"
-        >
+        <form onSubmit={(e) => e.preventDefault()}>
           <div className="bg-white">
             <h1>Signup Form </h1>
             <div className="biog">
@@ -894,53 +974,86 @@ const Signup = () => {
                   </select>
                   <p>Error Meassage</p>
                 </div>
-                <div className="input-text">
-                  <label htmlFor="transactionMethod">
-                    UPI ID/UPI Phone Number
-                  </label>
+                <div
+                  style={{
+                    display:
+                      details.transactionMethod === "upi" ||
+                      details.transactionMethod === "both"
+                        ? "block"
+                        : "none",
+                  }}
+                  className="input-text"
+                >
+                  <label htmlFor="upi">UPI ID/UPI Phone Number</label>
 
                   <input
                     onChange={changeHandler}
                     name="upi"
-                    id=""
+                    id="upi"
                     value={details.upi}
                     placeholder="upi"
                   />
-                  <p>Error Meassage</p>
                 </div>
-                <div className="input-text">
-                  <label htmlFor="transactionMethod">IFSC Code</label>
+                <div
+                  style={{
+                    display:
+                      details.transactionMethod === "net banking" ||
+                      details.transactionMethod === "both"
+                        ? "block"
+                        : "none",
+                  }}
+                  className="input-text"
+                >
+                  <label htmlFor="ifsc">IFSC Code</label>
 
                   <input
                     onChange={changeHandler}
                     name="ifsc"
-                    id=""
+                    id="ifsc"
                     value={details.ifsc}
                     placeholder="IFSC code"
                   />
                   <p>Error Meassage</p>
                 </div>
-                <div className="input-text">
-                  <label htmlFor="transactionMethod">Account Number</label>
+                <div
+                  style={{
+                    display:
+                      details.transactionMethod === "net banking" ||
+                      details.transactionMethod === "both"
+                        ? "block"
+                        : "none",
+                  }}
+                  className="input-text"
+                >
+                  <label htmlFor="account">Account Number</label>
 
                   <input
                     onChange={changeHandler}
                     name="bank"
-                    id=""
+                    id="account"
                     value={details.bank}
                     placeholder="Account number"
                   />
                   <p>Error Meassage</p>
                 </div>
-                <div className="input-text">
-                  <label htmlFor="transactionMethod">
+                <div
+                  style={{
+                    display:
+                      details.transactionMethod === "net banking" ||
+                      details.transactionMethod === "both"
+                        ? "block"
+                        : "none",
+                  }}
+                  className="input-text"
+                >
+                  <label htmlFor="confirm-account">
                     Confirm Account Number
                   </label>
 
                   <input
                     onChange={changeHandler}
                     name="confirmBank"
-                    id=""
+                    id="confirm-account"
                     value={details.confirmBank}
                     placeholder="Confirm Account number"
                   />
@@ -985,7 +1098,7 @@ const Signup = () => {
               />
             </div>
             <div className="btns">
-              <button type="submit">Pay</button>
+              <button onClick={submit}>Pay</button>
               {/* <button onClick={getPdf}>generate pdf</button> */}
             </div>
           </div>

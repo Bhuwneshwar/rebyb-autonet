@@ -24,6 +24,7 @@ import {
   addOthersPaymentVerification,
 } from "../controllers/OthersFunds"; // Assuming controllers export functions
 import UserAuthenticate from "../middleware/UserAuthenticate";
+import allMessages from "../controllers/allMessages";
 
 const myAccountRoute = express.Router();
 
@@ -55,7 +56,8 @@ myAccountRoute
   .route("/other-check-funds/:identifier")
   .get(UserAuthenticate, checkOtherFunds);
 myAccountRoute.route("/add-other-funds").post(UserAuthenticate, addOtherFunds);
-myAccountRoute.route("/message").post(UserAuthenticate, sendMessage);
+myAccountRoute.route("/messages").get(UserAuthenticate, allMessages);
+myAccountRoute.route("/message-send").post(UserAuthenticate, sendMessage);
 myAccountRoute.route("/message/join").post(UserAuthenticate, join);
 myAccountRoute
   .route("/messages/:referCode?")
