@@ -14,10 +14,11 @@ const dynamicFun = async (req: Request, res: Response) => {
 
 const generateDueFunds = async (user: IUser) => {
   try {
-    if (!user) return {};
-    const { _id, RegisteredAt } = user;
+    // if (!user) return {};
+    const { _id, createdAt } = user;
+    console.log({ createdAt });
 
-    const regDate = new Date(RegisteredAt);
+    const regDate = new Date(createdAt);
     const currentDate = new Date();
     const diffMilliseconds = currentDate.getTime() - regDate.getTime();
     const diffYears = diffMilliseconds / (1000 * 60 * 60 * 24 * 365);
@@ -31,7 +32,7 @@ const generateDueFunds = async (user: IUser) => {
     let myGoldenFunds = await GoldenFund.find({ userId: _id });
     let myDiamondFunds = await DiamondFund.find({ userId: _id });
 
-    console.log(daysBetweenDates);
+    console.log({ daysBetweenDates });
     let gFund = 0;
     let dFund = 0;
 

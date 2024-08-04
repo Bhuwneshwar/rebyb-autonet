@@ -6,8 +6,7 @@ import { toast } from "react-toastify";
 import { useGlobalContext } from "../MyRedux";
 import { formatDate } from "../utils/formatDate";
 import ClipboardCopy from "../components/ClipboardCopy";
-import { NavLink, useNavigate } from "react-router-dom";
-import { move } from "../utils/functions";
+import { useNavigate } from "react-router-dom";
 import PriorityDragable from "../components/PriorityDragable";
 import { Link } from "react-router-dom";
 
@@ -72,7 +71,7 @@ interface InitialOptions {
 }
 
 const Profile: React.FC = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const {
     store: { MyDetails, scrolledPosition },
     dispatch,
@@ -252,11 +251,11 @@ const Profile: React.FC = () => {
     newReferCode: false,
   });
 
-  const [notify, setNotify] = useState<Notify>({
-    num1: "",
-    num2: "",
-    num3: "",
-  });
+  // const [notify, setNotify] = useState<Notify>({
+  //   num1: "",
+  //   num2: "",
+  //   num3: "",
+  // });
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -692,98 +691,6 @@ const Profile: React.FC = () => {
     dispatch("loading", false);
   };
 
-  const changePassword = async () => {
-    try {
-      if (profileEdit.newPassword !== profileEdit.confirmPassword) {
-        return toast.error("New password and confirm password do not match", {
-          position: "bottom-center",
-        });
-      }
-
-      dispatch("loading", true);
-
-      const { data } = await axios.post(
-        "/api/v1/change-password",
-        {
-          oldPassword: profileEdit.oldPassword,
-          newPassword: profileEdit.newPassword,
-        },
-        {
-          withCredentials: true,
-        }
-      );
-
-      console.log({ data });
-      if (data.success) {
-        toast.success("Password change successfully", {
-          position: "bottom-center",
-        });
-        setProfileEdit((prev) => ({
-          ...prev,
-          newPassword: "",
-          oldPassword: "",
-          confirmPassword: "",
-        }));
-      }
-      if (data.error) {
-        toast.error(data.error, {
-          position: "bottom-center",
-        });
-      }
-    } catch (e: any) {
-      console.log(e);
-      toast.error(e.message, {
-        position: "bottom-center",
-      });
-    }
-    dispatch("loading", false);
-  };
-  const setPassword = async () => {
-    try {
-      if (profileEdit.newPassword !== profileEdit.confirmPassword) {
-        return toast.error("New password and confirm password do not match", {
-          position: "bottom-center",
-        });
-      }
-
-      dispatch("loading", true);
-
-      const { data } = await axios.post(
-        "/api/v1/set-password",
-        { newPassword: profileEdit.newPassword },
-        {
-          withCredentials: true,
-        }
-      );
-      console.log({ data });
-      if (data.success) {
-        toast.success("Password set successfully", {
-          position: "bottom-center",
-        });
-        if (MyDetails) {
-          dispatch("MyDetails", { ...MyDetails, password: data.newPassword });
-        }
-        setProfileEdit((prev) => ({
-          ...prev,
-          newPassword: "",
-          oldPassword: "",
-          confirmPassword: "",
-        }));
-      }
-      if (data.error) {
-        toast.error(data.error, {
-          position: "bottom-center",
-        });
-      }
-    } catch (e: any) {
-      console.log(e);
-      toast.error(e.message, {
-        position: "bottom-center",
-      });
-    }
-    dispatch("loading", false);
-  };
-
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); // Prevent default form submission behavior
 
@@ -828,6 +735,10 @@ const Profile: React.FC = () => {
     "nextInvest",
     "withdraw",
   ]);
+  const changePriorityArr = (newArr: string[]) => {
+    setPriority(() => newArr);
+  };
+
   interface CurOperator {
     price: number;
     validity: number;
@@ -900,10 +811,10 @@ const Profile: React.FC = () => {
   // 250 + 250 + 125 + 125 + 125 + 125 = output
   // Call uploadFile with your file input (e.g., from an input field)
 
-  const moveMe = (arr: string[], topbottm: "up" | "down", index: number) => {
-    const array = move(arr, topbottm, index);
-    setPriority(array);
-  };
+  // const moveMe = (arr: string[], topbottm: "up" | "down", index: number) => {
+  //   const array = move(arr, topbottm, index);
+  //   setPriority(array);
+  // };
 
   useEffect(() => {
     // Update profileEdit state when MyDetails changes
@@ -1010,7 +921,7 @@ const Profile: React.FC = () => {
                 autoFocus
               />
               <span
-                onClick={(e) =>
+                onClick={() =>
                   setEditToggle({ ...editToggle, name: !editToggle.name })
                 }
               >
@@ -1032,7 +943,7 @@ const Profile: React.FC = () => {
                   required
                 />
                 <span
-                  onClick={(e) =>
+                  onClick={() =>
                     setEditToggle({ ...editToggle, age: !editToggle.age })
                   }
                 >
@@ -1073,7 +984,7 @@ const Profile: React.FC = () => {
               </div>
             </div>
             <div className="date">
-              <p>Date of Registration: {formatDate(MyDetails?.RegisteredAt)}</p>
+              <p>Date of Registration: {formatDate(MyDetails?.createdAt)}</p>
             </div>
             <div className="contact-info">
               <p>contact information</p>
@@ -1133,7 +1044,7 @@ const Profile: React.FC = () => {
                     type="email"
                   />
                   <span
-                    onClick={(e) =>
+                    onClick={() =>
                       setEditToggle({
                         ...editToggle,
                         email: !editToggle.email,
@@ -1164,9 +1075,9 @@ const Profile: React.FC = () => {
             <div className="ids">
               <div className="main-id">
                 <p className="label">My ID:</p>
-                <p>{MyDetails._id} </p>
+                <p>{MyDetails.id} </p>
                 <button>
-                  <ClipboardCopy code={MyDetails._id} />
+                  <ClipboardCopy code={MyDetails.id} />
                 </button>
               </div>
               <div className="refer-id">
@@ -1185,7 +1096,7 @@ const Profile: React.FC = () => {
                     <ClipboardCopy code={MyDetails.referCode} />
                   </button>
                   <button
-                    onClick={(e) =>
+                    onClick={() =>
                       setEditToggle((prev) => ({
                         ...prev,
                         newReferCode: !prev.newReferCode,
@@ -1218,7 +1129,6 @@ const Profile: React.FC = () => {
                     value={profileEdit.rechNum1}
                     placeholder="Recharge num 1"
                   />
-                  <p>{notify.num1}</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="opera1">Select Operator For Number 1</label>
@@ -1237,7 +1147,6 @@ const Profile: React.FC = () => {
                       );
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="state1">Select State For Number 1</label>
@@ -1257,7 +1166,6 @@ const Profile: React.FC = () => {
                       );
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="SelectedPlan1">
@@ -1283,7 +1191,6 @@ const Profile: React.FC = () => {
                       );
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="num">
                   <label htmlFor="ExistingValidityOne">
@@ -1300,7 +1207,6 @@ const Profile: React.FC = () => {
                     value={profileEdit.ExistingValidityOne}
                     placeholder="Existing Validity "
                   />
-                  <p>Error Meassage</p>
                 </div>
               </div>
               <hr />
@@ -1317,7 +1223,6 @@ const Profile: React.FC = () => {
                     value={profileEdit.rechNum2}
                     placeholder="Recharge num 2"
                   />
-                  <p>{notify.num2}</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="opera2">Select Operator For Number 2</label>
@@ -1337,7 +1242,6 @@ const Profile: React.FC = () => {
                       );
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="state2">Select State For Number 2</label>
@@ -1357,7 +1261,6 @@ const Profile: React.FC = () => {
                       );
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="SelectedPlan2">
@@ -1382,7 +1285,6 @@ const Profile: React.FC = () => {
                       );
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="num">
                   <label htmlFor="ExistingValiditytwo">
@@ -1399,7 +1301,6 @@ const Profile: React.FC = () => {
                     value={profileEdit.ExistingValiditytwo}
                     placeholder="Existing Validity "
                   />
-                  <p>Error Meassage</p>
                 </div>
               </div>
               <hr />
@@ -1416,7 +1317,6 @@ const Profile: React.FC = () => {
                     value={profileEdit.rechNum3}
                     placeholder="Recharge num 3"
                   />
-                  <p>{notify.num3}</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="opera3">Select Operator For Number 3</label>
@@ -1436,7 +1336,6 @@ const Profile: React.FC = () => {
                       );
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="state3">Select State For Number 3</label>
@@ -1456,7 +1355,6 @@ const Profile: React.FC = () => {
                       );
                     })}{" "}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="SelectedPlan3">
@@ -1482,7 +1380,6 @@ const Profile: React.FC = () => {
                       );
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="num">
                   <label htmlFor="ExistingValiditythree">
@@ -1498,8 +1395,6 @@ const Profile: React.FC = () => {
                     value={profileEdit.ExistingValiditythree}
                     placeholder="Existing Validity "
                   />
-                  useEffect
-                  <p>Error Meassage</p>
                 </div>
               </div>
             </div>
@@ -1525,7 +1420,6 @@ const Profile: React.FC = () => {
                       );
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="input-text">
                   <label htmlFor="transactionMethod">
@@ -1539,7 +1433,6 @@ const Profile: React.FC = () => {
                     value={profileEdit.upi}
                     placeholder="upi"
                   />
-                  <p>Error Meassage</p>
                 </div>
                 <div className="input-text">
                   <label htmlFor="transactionMethod">IFSC Code</label>
@@ -1551,7 +1444,6 @@ const Profile: React.FC = () => {
                     value={profileEdit.ifsc}
                     placeholder="IFSC code"
                   />
-                  <p>Error Meassage</p>
                 </div>
                 <div className="input-text">
                   <label htmlFor="transactionMethod">Account Number</label>
@@ -1563,7 +1455,6 @@ const Profile: React.FC = () => {
                     value={profileEdit.bank}
                     placeholder="Account number"
                   />
-                  <p>Error Meassage</p>
                 </div>
                 <div className="input-text">
                   <label htmlFor="transactionMethod">
@@ -1577,7 +1468,6 @@ const Profile: React.FC = () => {
                     value={profileEdit.confirmBank}
                     placeholder="Confirm Account number"
                   />
-                  <p>Error Meassage</p>
                 </div>
               </div>
             </div>
@@ -1587,6 +1477,7 @@ const Profile: React.FC = () => {
 
               <PriorityDragable
                 array={priority}
+                setArray={changePriorityArr}
                 changeHandler={setProfileEdit}
                 details={profileEdit}
                 setDetails={profileEdit}
@@ -1596,6 +1487,11 @@ const Profile: React.FC = () => {
             <div className="btns">
               <Link to="/password-set">
                 {MyDetails.password ? "Change Password" : "Set New Password"}{" "}
+              </Link>
+              <Link to="/password-set">
+                {MyDetails.balancePin
+                  ? "Change Balance Pin"
+                  : "Set New Balance Pin"}{" "}
               </Link>
               <button onClick={genPdf}>Generate PDF</button>
               <button onClick={genPdf}>Register Passkey</button>

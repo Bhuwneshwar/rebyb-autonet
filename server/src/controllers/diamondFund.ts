@@ -1,20 +1,35 @@
 import DiamondFund from "../models/diamondSchema";
 import User from "../models/UsersSchema";
 
-const diamondFund = async (myId: number, fund: number): Promise<any> => {
+const diamondFund = async (
+  myId: number,
+  fund: number,
+  id: number
+): Promise<any> => {
   try {
-    const addedDiamondFund = await DiamondFund.updateOne(
-      { myId },
-      {
-        $inc: { fund },
-        $push: {
-          fundReturnHistory: {
-            many: fund,
-            when: Date.now(),
+    // Add fund to the diamond fund record for the given myId
+    console.log("Adding diamond fund");
+    console.log({ myId, fund, id });
+
+    if (myId > 3) {
+      const addedDiamondFund = await DiamondFund.updateOne(
+        { myId },
+        {
+          $inc: { fund },
+          $push: {
+            fundReturnHistory: {
+              many: fund,
+              when: Date.now(),
+              who: id,
+            },
           },
         },
-      }
-    );
+        {
+          new: true,
+        }
+      );
+      console.log({ addedDiamondFund });
+    }
 
     const diamondFundRecord = await DiamondFund.findOne({ myId });
     if (!diamondFundRecord) {

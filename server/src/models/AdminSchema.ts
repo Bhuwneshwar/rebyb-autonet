@@ -4,6 +4,8 @@ export interface AdminModel extends Document {
   CountUp: number;
   Multiple: number;
   EveryThreeH: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const adminSchema: Schema<AdminModel> = new Schema(

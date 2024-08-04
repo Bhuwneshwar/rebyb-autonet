@@ -1,13 +1,13 @@
-import { Request } from "express";
 import material from "../utils/Materials.json";
-import identification from "../middleware/identification";
 import { IReq } from "../types";
+import identificationService from "./identifyId";
+import User from "../models/UsersSchema";
 
-interface IBody {
+export interface IBody {
   name: string;
   age: number;
   gender: string;
-  phoneNumber: number;
+  phoneNumber: string;
   email: string;
   diamond: number;
   NextInvest: boolean;
@@ -80,97 +80,90 @@ const validation = async (req: IReq) => {
       SelectedPlan3,
     } = req.body as IBody;
 
-    const Ok: any = {};
+    const Ok = {} as IBody;
 
+    if (typeof name !== "string")
+      return { status: false, message: "Name should be string" };
+    if (name === "") return { status: false, message: "Name is required" };
     const trimmedName = name.trim();
-    const regexName = /^[a-zA-Z]{3,30}(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/;
-    if (regexName.test(trimmedName)) {
-      Ok["name"] = trimmedName;
-    } else {
-      return { status: false, message: "Invalid name" };
-    }
+    const regexName = /^[a-zA-Z',. -]{3,20}$/;
+    if (regexName.test(trimmedName)) Ok["name"] = trimmedName;
+    else return { status: false, message: "Invalid name" };
 
-    if (typeof +age === "number" && +age >= 9 && +age <= 120) {
-      Ok["age"] = +age;
-    } else {
-      return { status: false, message: "Invalid age" };
-    }
+    if (!age) return { status: false, message: "Age is required" };
+    if (typeof age !== "number")
+      return { status: false, message: "Age should be number" };
+    if (age >= 10 && age <= 99) Ok["age"] = age;
+    else return { status: false, message: "Age should be between 10-99" };
 
-    if (typeof gender === "string" && material.genders.includes(gender)) {
-      Ok["gender"] = gender;
-    } else {
-      return { status: false, message: "Invalid gender" };
-    }
+    if (typeof gender !== "string")
+      return { status: false, message: "Gender should be string" };
+    if (gender === "") return { status: false, message: "Gender is required" };
+    if (material.genders.includes(gender)) Ok["gender"] = gender;
+    else return { status: false, message: "Invalid Gender" };
 
-    if (phoneNumber) {
-      // additional validation for phone number can be added here
-      Ok["phoneNumber"] = phoneNumber;
-    } else {
-      return { status: false, message: "Contact number is required" };
-    }
+    if (typeof phoneNumber !== "string")
+      return { status: false, message: "Phone number should be string!" };
+    if (phoneNumber === "")
+      return { status: false, message: "Phone number is required!" };
+    const contactRegex = /^([5-9]{1}[0-9]{9})$/;
+    if (!contactRegex.test(phoneNumber))
+      return { status: false, message: "Invalid Phone number!" };
+    if (!req.session.phoneVerified || !req.session.phoneVerifiedTime)
+      return { status: false, message: "Please verify your phone number" };
+    const dueTimeContact = Date.now() - req.session.phoneVerifiedTime;
+    if (
+      phoneNumber === req.session.phoneVerified &&
+      dueTimeContact < 60 * 60000
+    )
+      Ok["phoneNumber"] = req.session.phoneVerified;
+    else
+      return {
+        status: false,
+        message: "This contact number is not verified",
+      };
 
-    // Assuming req.session.phoneVerifiedTime and req.session.phoneVerified are used for verification
-    let dueTime = 0;
-    if (req.session.phoneVerifiedTime) {
-      dueTime = Date.now() - req.session.phoneVerifiedTime || 0;
-      if (phoneNumber === req.session.phoneVerified && dueTime < 60 * 60000) {
-        Ok["phoneVerified"] = req.session.phoneVerified;
-      } else {
-        return {
-          status: false,
-          message: "This contact number is not verified",
-        };
-      }
-    }
+    if (typeof email !== "string")
+      return { status: false, message: "Email ID should be string!" };
+    if (email === "") return { status: false, message: "Email ID is required" };
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(email))
+      return { status: false, message: "Invalid email ID!" };
+    if (!req.session.emailVerified || !req.session.emailVerifiedTime)
+      return { status: false, message: "Please verify your Email ID" };
+    const dueTimeEmail = Date.now() - req.session.emailVerifiedTime;
+    if (email === req.session.emailVerified && dueTimeEmail < 60 * 60000)
+      Ok["email"] = req.session.emailVerified;
+    else
+      return {
+        status: false,
+        message: "This Email ID is not verified",
+      };
 
-    if (typeof email === "string") {
-      Ok["email"] = email;
-    } else {
-      return { status: false, message: "Email ID is required" };
-    }
-    if (req.session.emailVerifiedTime && req.session.emailVerified) {
-      dueTime = Date.now() - req.session.emailVerifiedTime;
-      if (email === req.session.emailVerified && dueTime < 60 * 60000) {
-        Ok["email"] = req.session.emailVerified;
-      } else {
-        return { status: false, message: "This email ID is not verified" };
-      }
-    }
+    if (typeof diamond !== "number" || typeof golden !== "number")
+      return {
+        status: false,
+        message: "Golden & Diamond of type should be number!",
+      };
+    const initialFunds = [0, 1, 2, 3, 4, 5, 6];
+    if (initialFunds.includes(diamond)) Ok["diamond"] = diamond;
+    else
+      return {
+        status: false,
+        message: "DiamondFund should be between 0-6",
+      };
+    if (initialFunds.includes(golden)) Ok["golden"] = golden;
+    else return { status: false, message: "GoldenFund should be between 0-6" };
+    if (diamond === 0 && golden === 0)
+      return { status: false, message: "At least choose one fund" };
 
-    if (typeof +diamond === "number" && typeof +golden === "number") {
-      diamond = +diamond;
-      golden = +golden;
-      if (diamond > 0 || golden > 0) {
-        if (diamond >= 0 && diamond <= 6) {
-          Ok["diamond"] = diamond;
-        } else {
-          return {
-            status: false,
-            message: "DiamondFund should be between 1-6",
-          };
-        }
-
-        if (golden >= 0 && golden <= 6) {
-          Ok["golden"] = golden;
-        } else {
-          return { status: false, message: "GoldenFund should be between 1-6" };
-        }
-      } else {
-        return { status: false, message: "At least choose one fund" };
-      }
-    } else {
-      return { status: false, message: "Invalid Golden or Diamond fund" };
-    }
-
-    if (typeof NextInvest === "boolean") {
-      Ok["NextInvest"] = NextInvest;
-    } else {
+    if (typeof NextInvest === "boolean") Ok["NextInvest"] = NextInvest;
+    else
       return { status: false, message: "NextInvest should be true or false" };
-    }
 
     // Validation functions
     const validateNumber = (num: string): boolean => {
-      const contactRegex = /([5-9]{1}[0-9]{9})$/;
+      const contactRegex = /^([5-9]{1}[0-9]{9})$/;
       return contactRegex.test(num);
     };
 
@@ -219,25 +212,14 @@ const validation = async (req: IReq) => {
         const filteredNum1 = validateNumber(rechNum1);
         if (filteredNum1) {
           rechNum++;
-          Ok["rechNum1"] = filteredNum1;
+          Ok["rechNum1"] = rechNum1;
         } else {
           return { status: false, message: "Recharge number 1 is invalid" };
         }
 
-        if (typeof state1 === "string") {
-          if (validateState(state1)) {
-            Ok["state1"] = state1;
-          } else {
-            return { status: false, message: "Invalid state1" };
-          }
-        } else {
-          return {
-            status: false,
-            message: "State is required if number is valid",
-          };
-        }
-
         if (typeof opera1 === "string") {
+          if (opera1 === "")
+            return { status: false, message: "Please choose Operator 1!" };
           if (validateOperator(opera1)) {
             Ok["opera1"] = opera1;
           } else {
@@ -246,7 +228,21 @@ const validation = async (req: IReq) => {
         } else {
           return {
             status: false,
-            message: "Operator is required if number is valid",
+            message: "Operator is required if is number 1",
+          };
+        }
+        if (typeof state1 === "string") {
+          if (state1 === "")
+            return { status: false, message: "Please choose state1!" };
+          if (validateState(state1)) {
+            Ok["state1"] = state1;
+          } else {
+            return { status: false, message: "Invalid state1" };
+          }
+        } else {
+          return {
+            status: false,
+            message: "State is required if is number 1",
           };
         }
 
@@ -256,17 +252,17 @@ const validation = async (req: IReq) => {
         ) {
           Ok["SelectedPlan1"] = SelectedPlan1;
         } else {
-          return { status: false, message: "SelectedPlan1 is required" };
+          return { status: false, message: "Please choose plan for number 1" };
         }
 
         if (
-          typeof +ExistingValidityOne === "number" &&
-          +ExistingValidityOne >= 0 &&
-          +ExistingValidityOne <= 365
+          typeof ExistingValidityOne === "number" &&
+          ExistingValidityOne >= 0 &&
+          ExistingValidityOne <= 365
         ) {
-          Ok["ExistingValidityOne"] = +ExistingValidityOne;
+          Ok["ExistingValidityOne"] = ExistingValidityOne;
         } else {
-          return { status: false, message: "Invalid ExistingValidityOne" };
+          return { status: false, message: "Invalid existing plan validity 1" };
         }
       }
     }
@@ -277,12 +273,27 @@ const validation = async (req: IReq) => {
         const filteredNum2 = validateNumber(rechNum2);
         if (filteredNum2) {
           rechNum++;
-          Ok["rechNum2"] = filteredNum2;
-        } else {
+          Ok["rechNum2"] = rechNum2;
+        } else
           return { status: false, message: "Recharge number 2 is invalid" };
+
+        if (typeof opera2 === "string") {
+          if (opera2 === "")
+            return { status: false, message: "Please choose operator 2!" };
+          if (validateOperator(opera2)) {
+            Ok["opera2"] = opera2;
+          } else return { status: false, message: "Invalid operator 2" };
+        } else {
+          return {
+            status: false,
+            message: "Operator is required if is number 2",
+          };
         }
 
         if (typeof state2 === "string") {
+          if (state2 === "")
+            return { status: false, message: "Please choose state 2!" };
+
           if (validateState(state2)) {
             Ok["state2"] = state2;
           } else {
@@ -291,20 +302,7 @@ const validation = async (req: IReq) => {
         } else {
           return {
             status: false,
-            message: "State is required if number is valid",
-          };
-        }
-
-        if (typeof opera2 === "string") {
-          if (validateOperator(opera2)) {
-            Ok["opera2"] = opera2;
-          } else {
-            return { status: false, message: "Invalid operator 2" };
-          }
-        } else {
-          return {
-            status: false,
-            message: "Operator is required if number is valid",
+            message: "State is required if is number 2",
           };
         }
 
@@ -314,17 +312,17 @@ const validation = async (req: IReq) => {
         ) {
           Ok["SelectedPlan2"] = SelectedPlan2;
         } else {
-          return { status: false, message: "SelectedPlan2 is required" };
+          return { status: false, message: "Please choose plan for number 2" };
         }
 
         if (
-          typeof +ExistingValiditytwo === "number" &&
-          +ExistingValiditytwo >= 0 &&
-          +ExistingValiditytwo <= 365
+          typeof ExistingValiditytwo === "number" &&
+          ExistingValiditytwo >= 0 &&
+          ExistingValiditytwo <= 365
         ) {
-          Ok["ExistingValiditytwo"] = +ExistingValiditytwo;
+          Ok["ExistingValiditytwo"] = ExistingValiditytwo;
         } else {
-          return { status: false, message: "Invalid ExistingValiditytwo" };
+          return { status: false, message: "Invalid existing plan validity 2" };
         }
       }
     }
@@ -335,25 +333,15 @@ const validation = async (req: IReq) => {
         const filteredNum3 = validateNumber(rechNum3);
         if (filteredNum3) {
           rechNum++;
-          Ok["rechNum3"] = filteredNum3;
+          Ok["rechNum3"] = rechNum3;
         } else {
           return { status: false, message: "Recharge number 3 is invalid" };
         }
 
-        if (typeof state3 === "string") {
-          if (validateState(state3)) {
-            Ok["state3"] = state3;
-          } else {
-            return { status: false, message: "Invalid state3" };
-          }
-        } else {
-          return {
-            status: false,
-            message: "State is required if number is valid",
-          };
-        }
-
         if (typeof opera3 === "string") {
+          if (opera3 === "")
+            return { status: false, message: "Please choose operator 3" };
+
           if (validateOperator(opera3)) {
             Ok["opera3"] = opera3;
           } else {
@@ -362,7 +350,23 @@ const validation = async (req: IReq) => {
         } else {
           return {
             status: false,
-            message: "Operator is required if number is valid",
+            message: "Operator is required if is number 3",
+          };
+        }
+
+        if (typeof state3 === "string") {
+          if (state3 === "")
+            return { status: false, message: "Please choose state 3" };
+
+          if (validateState(state3)) {
+            Ok["state3"] = state3;
+          } else {
+            return { status: false, message: "Invalid state3" };
+          }
+        } else {
+          return {
+            status: false,
+            message: "State is required if is number 3",
           };
         }
 
@@ -372,17 +376,17 @@ const validation = async (req: IReq) => {
         ) {
           Ok["SelectedPlan3"] = SelectedPlan3;
         } else {
-          return { status: false, message: "SelectedPlan3 is required" };
+          return { status: false, message: "please choose plan 3" };
         }
 
         if (
-          typeof +ExistingValiditythree === "number" &&
-          +ExistingValiditythree >= 0 &&
-          +ExistingValiditythree <= 365
+          typeof ExistingValiditythree === "number" &&
+          ExistingValiditythree >= 0 &&
+          ExistingValiditythree <= 365
         ) {
-          Ok["ExistingValiditythree"] = +ExistingValiditythree;
+          Ok["ExistingValiditythree"] = ExistingValiditythree;
         } else {
-          return { status: false, message: "Invalid ExistingValiditythree" };
+          return { status: false, message: "Invalid existing plan validity 3" };
         }
       }
     }
@@ -396,116 +400,131 @@ const validation = async (req: IReq) => {
 
     if (typeof autoRecharge === "boolean") {
       Ok["autoRecharge"] = autoRecharge;
-    } else {
+    } else
       return { status: false, message: "autoRecharge should be true or false" };
-    }
 
     // Transaction method validation
-    if (typeof transactionMethod === "string" && transactionMethod === "") {
-      // Handle logic for each transaction method (upi, netbanking, both)
-    } else if (typeof transactionMethod === "string") {
-      switch (transactionMethod) {
-        case "upi":
-          if (typeof upi === "string") {
-            const regexUpi = /^[\w.-]+@[\w-]+(\.[\w-]+)*$/;
-            if (regexUpi.test(upi)) {
-              Ok["upi"] = upi;
-              Ok["transactionMethod"] = transactionMethod;
-            } else {
-              return { status: false, message: "UPI code is invalid" };
-            }
+    if (typeof transactionMethod !== "string")
+      return { status: false, message: "Transaction method should be string" };
+    // if (transactionMethod === "")
+    //   return { status: false, message: "Transaction method is required" };
+    // // Handle logic for each transaction method (upi, netbanking, both)
+
+    switch (transactionMethod) {
+      case "upi":
+        if (typeof upi === "string") {
+          const regexUpi = /^[\w.-]+@[\w-]+(\.[\w-]+)*$/;
+          if (regexUpi.test(upi)) {
+            Ok["upi"] = upi;
+            Ok["transactionMethod"] = transactionMethod;
           } else {
-            return { status: false, message: "Please fill out UPI Code" };
+            return { status: false, message: "UPI code is invalid" };
           }
-          break;
-        case "net banking":
-          if (typeof ifsc === "string") {
-            const regexIfsc = /^[A-Z]{4}0[A-Z0-9]{6}$/;
-            if (regexIfsc.test(ifsc)) {
-              Ok["ifsc"] = ifsc;
-            } else return { status: false, message: "IFSC code is invalid" };
-          } else return { status: false, message: "please fill out IFSC Code" };
+        } else {
+          return { status: false, message: "Please fill out UPI Code" };
+        }
+        break;
+      case "net banking":
+        if (typeof ifsc === "string") {
+          const regexIfsc = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+          if (regexIfsc.test(ifsc)) {
+            Ok["ifsc"] = ifsc;
+          } else return { status: false, message: "IFSC code is invalid" };
+        } else return { status: false, message: "please fill out IFSC Code" };
 
-          if (typeof bank === "string") {
-            const regexBank = /^[0-9]{9,18}$/;
-            if (regexBank.test(bank)) {
-            } else
-              return { status: false, message: "account number is invalid" };
-          } else
-            return { status: false, message: "please fill out Account number" };
+        if (typeof bank === "string") {
+          const regexBank = /^[0-9]{9,18}$/;
+          if (regexBank.test(bank)) {
+          } else return { status: false, message: "account number is invalid" };
+        } else
+          return { status: false, message: "please fill out Account number" };
 
-          if (bank === confirmBank) {
-            //req.session.bank = bank;
-            //req.session.transactionMethod = "both";
-            Ok["bank"] = bank;
-            Ok["transactionMethod"] = transactionMethod;
-          } else
-            return { status: false, message: "Account number can't matching" };
+        if (bank === confirmBank) {
+          //req.session.bank = bank;
+          //req.session.transactionMethod = "both";
+          Ok["bank"] = bank;
+          Ok["transactionMethod"] = transactionMethod;
+        } else
+          return { status: false, message: "Account number can't matching" };
 
-          break;
-        case "both":
-          if (typeof upi === "string") {
-            const regexUpi = /^[\w.-]+@[\w-]+(\.[\w-]+)*$/;
-            if (regexUpi.test(upi)) {
-              Ok["upi"] = upi;
-            } else return { status: false, message: "UPI code is invalid" };
-          } else return { status: false, message: "please fill out UPI Code" };
+        break;
+      case "both":
+        if (typeof upi === "string") {
+          const regexUpi = /^[\w.-]+@[\w-]+(\.[\w-]+)*$/;
+          if (regexUpi.test(upi)) {
+            Ok["upi"] = upi;
+          } else return { status: false, message: "UPI code is invalid" };
+        } else return { status: false, message: "please fill out UPI Code" };
 
-          if (typeof ifsc === "string") {
-            const regexIfsc = /^[A-Z]{4}0[A-Z0-9]{6}$/;
-            if (regexIfsc.test(ifsc)) {
-              Ok["ifsc"] = ifsc;
-            } else return { status: false, message: "IFSC code is invalid" };
-          } else return { status: false, message: "please fill out IFSC Code" };
+        if (typeof ifsc === "string") {
+          const regexIfsc = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+          if (regexIfsc.test(ifsc)) {
+            Ok["ifsc"] = ifsc;
+          } else return { status: false, message: "IFSC code is invalid" };
+        } else return { status: false, message: "please fill out IFSC Code" };
 
-          if (typeof bank === "string") {
-            const regexBank = /^[0-9]{9,18}$/;
-            if (regexBank.test(bank)) {
-            } else
-              return { status: false, message: "account number is invalid" };
-          } else
-            return { status: false, message: "please fill out Account number" };
+        if (typeof bank === "string") {
+          const regexBank = /^[0-9]{9,18}$/;
+          if (regexBank.test(bank)) {
+          } else return { status: false, message: "account number is invalid" };
+        } else
+          return { status: false, message: "please fill out Account number" };
 
-          if (bank === confirmBank) {
-            //req.session.bank = bank;
-            //req.session.transactionMethod = "both";
-            Ok["bank"] = bank;
-            Ok["transactionMethod"] = transactionMethod;
-          } else
-            return { status: false, message: "Account number can't matching" };
+        if (bank === confirmBank) {
+          //req.session.bank = bank;
+          //req.session.transactionMethod = "both";
+          Ok["bank"] = bank;
+          Ok["transactionMethod"] = transactionMethod;
+        } else
+          return { status: false, message: "Account number can't matching" };
 
-          break;
-        default:
-          return { status: false, message: "Invalid transactionMethod" };
-      }
-    } else {
-      return { status: false, message: "Invalid transactionMethod" };
+        break;
+      case "none":
+        Ok["transactionMethod"] = transactionMethod;
+        break;
+      default:
+        return { status: false, message: "Invalid transaction Method" };
     }
 
-    if (autoWithdraw === false || autoWithdraw === true) {
+    if (typeof autoWithdraw === "boolean") {
       Ok["autoWithdraw"] = autoWithdraw;
     } else {
       return { status: false, message: "autoWithdraw should be true or false" };
     }
 
     if (typeof refer === "string") {
-      Ok["refer"] = refer;
-    } else {
-      return { status: false, message: "refer is required" };
+      if (refer !== "") {
+        const isValid = await identificationService(refer);
+        if (isValid.doc) {
+          Ok["refer"] = refer;
+        } else {
+          return { status: false, message: "invalid referral Username ID" };
+        }
+      }
     }
 
     if (typeof setRefer === "string") {
-      Ok["setRefer"] = setRefer;
+      if (setRefer === "")
+        return { status: false, message: "New Username ID must be provided" };
+      const referRegex = /^[a-zA-Z0-9]{1,50}$/;
+      if (referRegex.test(setRefer)) {
+        const exist = await User.findOne({ referCode: setRefer });
+        if (exist) {
+          return { status: false, message: "This username ID already exists" };
+        } else {
+          Ok["setRefer"] = setRefer;
+        }
+      } else return { status: false, message: "Invalid New Username" };
     } else {
-      return { status: false, message: "setRefer is required" };
+      return { status: false, message: "Invalid New Username" };
     }
 
     if (
-      typeof +withdraw_perc === "number" &&
-      +withdraw_perc >= 1 &&
-      +withdraw_perc <= 100
+      typeof withdraw_perc === "number" &&
+      withdraw_perc >= 1 &&
+      withdraw_perc <= 100
     ) {
-      Ok["withdraw_perc"] = +withdraw_perc;
+      Ok["withdraw_perc"] = withdraw_perc;
     } else {
       return {
         status: false,
@@ -527,6 +546,7 @@ const validation = async (req: IReq) => {
         Ok["priority"] = priority;
       } else return { status: false, message: "invalid Priority!" };
     } else return { status: false, message: "invalid Priority!" };
+    console.log({ Ok });
 
     return { status: true, message: "Ok", data: Ok };
   } catch (error) {

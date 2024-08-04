@@ -21,7 +21,7 @@ const allMessages = async (req: IReq, res: Response) => {
           profileImg: sender?.profileImg,
           name: sender?.name,
           message: message.message,
-          timestamp: message.timestamp,
+          timestamp: message.createdAt,
           type: "sender",
           // time:message.createdAt,
         };

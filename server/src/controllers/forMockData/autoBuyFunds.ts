@@ -67,7 +67,7 @@ const addGolden = async (
       }
 
       if (fund > 0) {
-        await goldenFund(oneByTwoNum, fund);
+        await goldenFund(oneByTwoNum, fund, savedGoldenFund.myId);
       }
     }
 
@@ -133,7 +133,7 @@ const addDiamond = async (
       }
 
       if (fund > 0) {
-        await diamondFund(oneByTwoNum, fund);
+        await diamondFund(oneByTwoNum, fund, savedDiamondFund.myId);
       }
     }
 

@@ -8,12 +8,14 @@ interface MailOptions {
   to: string;
   subject: string;
   text: string;
+  html: string;
 }
 
 async function SendMail(
   to: string,
   subject: string,
-  text: string
+  text: string,
+  html: string
 ): Promise<boolean> {
   try {
     console.log(text);
@@ -30,7 +32,8 @@ async function SendMail(
       from: "rebybfund5@gmail.com",
       to,
       subject,
-      text: `<div><h3>ONE TIME PASSWORD</h3><h2>${text}</h2></div>`,
+      text: "Sorry for intract you! this is test mail!",
+      html: `<div><h3>ONE TIME PASSWORD</h3><br/><h2>${html}</h2></div>`,
     };
 
     const info = await transporter.sendMail(mailOptions);

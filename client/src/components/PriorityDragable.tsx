@@ -22,11 +22,13 @@ import DragHandleIcon from "@mui/icons-material/DragHandle";
 
 const PriorityDragable = ({
   array,
+  setArray,
   changeHandler,
   details,
   setDetails,
 }: {
   array: any[];
+  setArray: any;
   setDetails: any;
   details: any;
   changeHandler: any;
@@ -47,12 +49,10 @@ const PriorityDragable = ({
       const newIndex = arrList.findIndex((item) => item === over.id);
       const newArr = arrayMove(arrList, oldIndex, newIndex);
       setArrList([...newArr]);
-      setDetails((prev: any) => {
-        return { ...prev, priority: newArr };
-      });
+      setArray(newArr);
     }
   }
-  console.log(arrList);
+  console.log({ arrList });
 
   return (
     <div>

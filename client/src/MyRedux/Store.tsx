@@ -6,16 +6,53 @@ interface RechargeDetails {
   plan?: string;
 }
 
-interface Expenses {
-  recharge: any[];
-  userSend: any[];
-  withdrawOnBank: any[];
+export interface Expenses {
+  recharge: {
+    number: string;
+    plan: number;
+    validity: number;
+    date: Date;
+    from: string;
+  }[];
+  userSend: {
+    id: string;
+    name: string;
+    amount: number;
+    date: Date;
+    from: string;
+  }[];
+  withdrawOnBank: {
+    amount: number;
+    date: Date;
+  }[];
+  invest: {
+    golden: number;
+    diamond: number;
+    amount: number;
+    from: string;
+    date: Date;
+  }[];
 }
 
-interface Incomes {
-  referralAmount: any[];
-  topupAmount: any[];
-  userAmount: any[];
+export interface Incomes {
+  referralAmount: {
+    amount: number;
+    golden: number;
+    diamond: number;
+    id: string;
+    name: string;
+    date: Date;
+  }[];
+  topupAmount: {
+    amount: number;
+    date: Date;
+  }[];
+  userAmount: {
+    amount: number;
+    date: Date;
+    id: string;
+    name: string;
+  }[];
 }
 
 interface LastMessage {
@@ -26,10 +63,10 @@ interface LastMessage {
 }
 
 export interface IMyDetails {
-  _id: string;
+  id: string;
   name: string;
   Balance: number;
-  RegisteredAt: Date;
+  createdAt: Date;
   age: number;
   canBuyDiamond: any[];
   canBuyGolden: any[];
@@ -41,13 +78,13 @@ export interface IMyDetails {
   rechargeNum1: RechargeDetails;
   rechargeNum2: RechargeDetails;
   rechargeNum3: RechargeDetails;
-  expenses: Expenses;
+  expenses?: Expenses;
+  incomes?: Incomes;
   gender: string;
-  incomes: Incomes;
   lastMesssge: LastMessage;
   password: boolean;
   rechNums: any[];
-  updatedDate: string;
+  updatedAt: Date;
   referCode: string;
   transactionMethod: string;
   upi?: string;
@@ -58,24 +95,53 @@ export interface IMyDetails {
   NextInvest: boolean;
   allMessages: any[];
   newMessage: string;
-  diamondFunds: {
+  diamondFunds?: {
     buyTime: Date;
     fund: number;
+    id: number;
+    expendHistory: {
+      level1: {
+        fund: number;
+        id: number;
+      };
+      level2: {
+        fund: number;
+        id: number;
+      };
+      refferal: number;
+      service: number;
+    };
     funding: {
-      many: number;
-      when: Date;
-      _id: string;
+      amount: number;
+      date: Date;
+      id: string;
+      upcoming: boolean;
     }[];
   }[];
-  goldenFunds: {
+  goldenFunds?: {
     buyTime: Date;
     fund: number;
+    id: number;
+    expendHistory: {
+      level1: {
+        fund: number;
+        id: number;
+      };
+      level2: {
+        fund: number;
+        id: number;
+      };
+      refferal: number;
+      service: number;
+    };
     funding: {
-      many: number;
-      when: Date;
-      _id: string;
+      amount: number;
+      date: Date;
+      id: string;
+      upcoming: boolean;
     }[];
   }[];
+  balancePin: boolean;
 }
 
 export interface InitialState {
@@ -128,6 +194,9 @@ export interface InitialState {
       left: number;
     };
   };
+  balancePinModel: boolean;
+  successResponseData?: string;
+  balancePinFormData?: string;
 }
 
 const initialState: InitialState = {
@@ -180,6 +249,7 @@ const initialState: InitialState = {
     },
     // add more pages here
   },
+  balancePinModel: false,
 };
 
 export default initialState;

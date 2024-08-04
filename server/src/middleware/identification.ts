@@ -1,4 +1,3 @@
-import { ObjectId } from "mongoose";
 import User, { IUser } from "../models/UsersSchema";
 
 const identification = async (identifyId: string, rootUser: IUser) => {
@@ -24,7 +23,7 @@ const identification = async (identifyId: string, rootUser: IUser) => {
           doc,
           type: "contact",
           contact: regexTrimmedContact[0],
-          sameAccount: rootUser.contact === +regexTrimmedContact[0],
+          sameAccount: rootUser.contact === regexTrimmedContact[0],
         };
       } else {
         return { error: "Invalid Contact" };

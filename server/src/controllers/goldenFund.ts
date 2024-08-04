@@ -1,21 +1,31 @@
 import GoldenFund from "../models/goldenSchema";
 import User from "../models/UsersSchema";
 
-const goldenFund = async (myId: number, fund: number): Promise<any> => {
+const goldenFund = async (
+  myId: number,
+  fund: number,
+  id: number
+): Promise<any> => {
   try {
-    const addedGoldenFund = await GoldenFund.updateOne(
-      { myId },
-      {
-        $inc: { fund },
-        $push: {
-          fundReturnHistory: {
-            many: fund,
-            when: Date.now(),
+    if (myId > 3) {
+      const addedGoldenFund = await GoldenFund.updateOne(
+        { myId },
+        {
+          $inc: { fund },
+          $push: {
+            fundReturnHistory: {
+              many: fund,
+              when: Date.now(),
+              who: id,
+            },
           },
         },
-      }
-    );
-
+        {
+          new: true,
+        }
+      );
+      console.log({ addedGoldenFund });
+    }
     const goldenFundRecord = await GoldenFund.findOne({ myId });
     if (!goldenFundRecord) {
       throw new Error("GoldenFund record not found for myId: " + myId);

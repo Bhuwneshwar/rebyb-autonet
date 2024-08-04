@@ -3,6 +3,8 @@ import GoldenFund from "../../models/goldenSchema";
 import User from "../../models/UsersSchema";
 import Admin from "../../models/AdminSchema";
 import AdminHome from "../../models/AdminHome";
+import Temp from "../../models/Temporary";
+import Messages from "../../models/messages";
 
 const ResetFunds = async (): Promise<boolean> => {
   try {
@@ -11,6 +13,8 @@ const ResetFunds = async (): Promise<boolean> => {
     const deletedUsers = await User.deleteMany({});
     const deletedAdmins = await Admin.deleteMany({});
     const deletedAdminHome = await AdminHome.deleteMany();
+    const temp = await Temp.deleteMany();
+    const msg = await Messages.deleteMany();
 
     if (deletedGoldenFund && deletedDiamondFund) {
       console.log("All records have been deleted");
@@ -25,28 +29,12 @@ const ResetFunds = async (): Promise<boolean> => {
         autoWithdraw: true,
         autoRecharge: true,
         NextInvest: true,
-        expenses: {
-          recharge: {
-            amount: 0,
-          },
-          userSend: {
-            amount: 0,
-          },
-          withdrawOnBank: {
-            amount: 0,
-          },
-        },
-        incomes: {
-          referralAmount: {
-            amount: 0,
-          },
-          topupAmount: {
-            amount: 0,
-          },
-          userAmount: {
-            amount: 0,
-          },
-        },
+        Balance: 0,
+        role: "admin",
+        withdrawPerc: 100,
+        Priority: ["recharge", "nextInvest", "withdraw"],
+        transactionMethod: "none",
+        userType: "permanent",
       });
 
       const savedUser = await newUser.save();

@@ -34,7 +34,7 @@ const checkOtherFunds = async (req: IReq, res: Response) => {
     let myGoldenFunds = await GoldenFund.find({ userId: otherUser._id });
     let myDiamondFunds = await DiamondFund.find({ userId: otherUser._id });
 
-    const regDate = new Date(otherUser.RegisteredAt);
+    const regDate = new Date(otherUser.createdAt);
     const currentDate = new Date();
     const diffMilliseconds = currentDate.getTime() - regDate.getTime();
 
@@ -219,12 +219,11 @@ const addOtherFunds = async (req: IReq, res: Response) => {
         if (!identified.doc) return res.send("Something went wrong3!");
 
         let fundAdded = await buyFunds(
+          req,
+          res,
           +selectedGolden,
           +selectedDiamond,
-          identified.doc?._id,
-          "balance_order_id",
-          "balance_signature",
-          "balance_payment_id"
+          identified.doc?._id
         );
 
         const updatedUser = await User.findById(req.rootUser._id);
@@ -271,12 +270,11 @@ const addOthersPaymentVerification = async (req: IReq, res: Response) => {
     const signatureIsValid = expectedSignature === razorpay_signature;
     if (signatureIsValid) {
       let fundAdded = await buyFunds(
+        req,
+        res,
         req.session.otherGolden,
         req.session.otherDiamond,
-        req.session.otherDoc,
-        razorpay_order_id,
-        razorpay_signature,
-        razorpay_payment_id
+        req.session.otherDoc
       );
       if (fundAdded) {
         let referralMoney =
@@ -328,8 +326,9 @@ const sendMessage = async (req: IReq, res: Response) => {
     if (!req.rootUser) return res.send({ error: "Please login first" });
     const identified = await identification(recieverId, req.rootUser);
 
-    if (!identified.doc) return res.send("invalid user refference");
-    if (identified.sameAccount) return res.send("this is same account ");
+    if (!identified.doc) return res.send({ error: "invalid user refference" });
+    if (identified.sameAccount)
+      return res.send({ error: "this is same account " });
 
     const trimedMessage = userMessage.toString().trim();
     console.log(trimedMessage);
@@ -349,10 +348,14 @@ const sendMessage = async (req: IReq, res: Response) => {
         message: trimedMessage,
       });
       if (notify) {
-        res.send({ message: "message sent", status: "notified" });
-      } else res.send({ message: "message sent", status: "db" });
+        res.send({
+          success: true,
+          message: "message sent",
+          status: "notified",
+        });
+      } else res.send({ success: true, message: "message sent", status: "db" });
     } else {
-      res.send("message not sent");
+      res.send({ error: "message not saved", status: "not_saved" });
     }
   } catch (e) {
     console.log("sendMessage error :", e);
@@ -368,8 +371,10 @@ const getMessages = async (req: IReq, res: Response) => {
 
       const identified = await identification(referCode, req.rootUser);
 
-      if (!identified.doc) return res.send("invalid user refference");
-      if (identified.sameAccount) return res.send("this is same account ");
+      if (!identified.doc)
+        return res.send({ error: "invalid user refference" });
+      if (identified.sameAccount)
+        return res.send({ error: "this is same account " });
 
       const myMessages = await Message.find({
         $or: [
@@ -377,7 +382,7 @@ const getMessages = async (req: IReq, res: Response) => {
           { receiver: identified.doc._id, sender: req.rootUser._id },
         ],
       });
-      if (!myMessages) return res.send("no messages");
+      if (!myMessages) return res.send({ error: "no messages" });
 
       console.log(myMessages);
 
@@ -387,7 +392,7 @@ const getMessages = async (req: IReq, res: Response) => {
           return {
             id: doc._id,
             message: doc.message,
-            time: doc.timestamp,
+            time: doc.createdAt,
             align: "right",
           };
         });
@@ -398,7 +403,7 @@ const getMessages = async (req: IReq, res: Response) => {
           return {
             id: doc._id,
             message: doc.message,
-            time: doc.timestamp,
+            time: doc.createdAt,
             align: "left",
           };
         });
@@ -408,22 +413,27 @@ const getMessages = async (req: IReq, res: Response) => {
       );
 
       return res.send({
-        mySms,
-        senderSms,
-        info: {
-          name: identified.doc.name,
-          goldenFunds: arrGoldenFund,
-          diamondFunds: arrDiamondFund,
-        },
+        name: identified.doc.name,
+        profileImg: identified.doc.profileImg,
+        onActive: "active",
+        messages: ["hi ", "bhuwneshwar", "how", "are", "you?"],
+        maxBalance: 2000,
+        otherCanBuyGolden: arrGoldenFund,
+        otherCanBuyDiamond: arrDiamondFund,
+        success: true,
       });
     }
 
     const myMessages = await Message.find({
       $or: [{ sender: req.rootUser?._id }, { receiver: req.rootUser?._id }],
     });
-    if (!myMessages) return res.send("no messages");
+    console.log({ myMessages });
+    if (!myMessages) return res.send({ error: "no messages" });
 
-    console.log(myMessages);
+    // myMessages.forEach((doc) => {
+    //   if (doc.sender === req.userId) {
+    //   }
+    // });
 
     const allMessages = myMessages.filter(
       (doc, index, self) =>
@@ -433,20 +443,29 @@ const getMessages = async (req: IReq, res: Response) => {
         )
     );
     const ids: ObjectId[] = [];
-    allMessages.map((doc) => {
+    allMessages.forEach((doc) => {
       ids.push(doc.sender);
       ids.push(doc.receiver);
       return true;
     });
-    const users = await User.find({ _id: { $in: ids } });
 
-    const names = users.map((doc) => {
-      return { name: doc.name, referCode: doc.referCode };
+    const removeRootusers = ids.filter((id) => id !== req.userId);
+    const users = await User.find({ _id: { $in: removeRootusers } });
+
+    const usersList = users.map((doc) => {
+      return {
+        name: doc.name,
+        referCode: doc.referCode,
+        profileImg: doc.profileImg,
+        unreadMsg: "unread message",
+        lastMsgTime: Date(),
+        unreadMsgCount: 12,
+      };
     });
 
-    //const myMessages = await Message.find({});
+    //const myMessages = await Message.find();
 
-    return res.send({ names });
+    return res.send({ success: true, usersList });
   } catch (e) {
     console.log("getMessages error :", e);
   }

@@ -3,22 +3,28 @@ import User from "../models/UsersSchema"; // Update this import according to you
 import SendMail from "./SendMail";
 import { IReq } from "../types";
 
-const phoneOtpSend = async (req: IReq, res: Response): Promise<void> => {
+const phoneOtpSend = async (req: IReq, res: Response) => {
   try {
     console.log(req.body);
 
     const { contact } = req.body;
     const contactRegex = /([5-9]{1}[0-9]{9})$/g;
-
-    if (contact && contactRegex.test(contact)) {
-      var regexTrimmedContact = contact.toString().match(contactRegex);
+    let mob: string;
+    if (typeof contact === "string") {
+      if (contactRegex.test(contact)) {
+        const extracted = contact.match(contactRegex);
+        if (extracted?.length) {
+          mob = extracted[0];
+          if (!mob) return res.send({ error: "Could not find mobile contact" });
+        } else return res.send({ error: "Could not find contact" });
+      } else return res.send({ error: "Could not find contact" });
     } else {
       res.send({ error: "invalid contact number " });
       return;
     }
 
     const alreadyContact = await User.findOne({
-      contact: regexTrimmedContact,
+      contact: mob,
       userType: "permanent",
     });
     if (alreadyContact) {
@@ -43,11 +49,11 @@ const phoneOtpSend = async (req: IReq, res: Response): Promise<void> => {
     req.session.otp = otp.toString();
     req.session.time = Date.now();
     req.session.count = 0;
-    req.session.contact = regexTrimmedContact[0];
+    req.session.contact = mob;
     console.log(otp);
     res.send({
       success: true,
-      contact: regexTrimmedContact[0],
+      contact: mob,
       message: "OTP Sent Successfully.",
       otp,
     });
@@ -159,7 +165,7 @@ const emailOtpSend = async (req: Request, res: Response): Promise<void> => {
     req.session.timeEmail = Date.now();
     req.session.countEmail = 0;
     req.session.email = email;
-    await SendMail(email, "Verification", `<h1>${otp}</h1>`);
+    await SendMail(email, "Verification", "test email", `<h1>${otp}</h1>`);
     console.log(otp);
     res.send({
       success: true,

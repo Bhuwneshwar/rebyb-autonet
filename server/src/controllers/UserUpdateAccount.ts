@@ -1,7 +1,7 @@
 import User from "../models/UsersSchema";
 import DiamondFund from "../models/diamondSchema";
 import GoldenFund from "../models/goldenSchema";
-import { Document } from "mongoose";
+// import { Document } from "mongoose";
 
 interface FundIds {
   golden: string[];
@@ -53,7 +53,7 @@ const UserUpdate = async (_id: string) => {
       return;
     }
 
-    const { updatedDate, incomes, expenses, Balance } = user;
+    const { updatedAt, incomes, expenses, Balance } = user;
 
     // Calculate total income from GoldenFunds and DiamondFunds
     let totalIncome = 0;
@@ -63,9 +63,9 @@ const UserUpdate = async (_id: string) => {
         fund.fundReturnHistory.forEach(
           (history: { time: any; amount: any }) => {
             const historyTime = new Date(history.time);
-            const updateDateTime = new Date(updatedDate);
+            const updateDateTime = new Date(updatedAt);
             if (historyTime > updateDateTime) {
-              totalIncome += +history.amount;
+              totalIncome += history.amount;
             }
           }
         );
@@ -81,10 +81,11 @@ const UserUpdate = async (_id: string) => {
     // Calculate total referral money
 
     // Calculate total referral money using reduce method
-    const totalReferralMoney = incomes.referralAmount.reduce(
+
+    const totalReferralMoney = incomes?.referralAmount.reduce(
       (total: number, obj) => {
-        const objTime = new Date(obj.time); // Parse obj.time as Date
-        const updateTime = updatedDate;
+        const objTime = new Date(obj.date); // Parse obj.time as Date
+        const updateTime = updatedAt;
 
         if (objTime > updateTime) {
           return total + +obj.amount; // Convert obj.amount to number if needed
@@ -95,10 +96,10 @@ const UserUpdate = async (_id: string) => {
     );
 
     // Calculate total top-up amount
-    const totalTopUpAmount = incomes.topupAmount.reduce(
+    const totalTopUpAmount = incomes?.topupAmount.reduce(
       (total: number, obj) => {
-        const objTime = new Date(obj.time);
-        const updateTime = new Date(updatedDate);
+        const objTime = new Date(obj.date);
+        const updateTime = new Date(updatedAt);
         if (objTime > updateTime) {
           return total + +obj.amount;
         }
@@ -113,9 +114,9 @@ const UserUpdate = async (_id: string) => {
       from: string;
     }
     // Calculate total user amount
-    const totalUserAmount = incomes.userAmount.reduce((total: number, obj) => {
-      const objTime = new Date(obj.time);
-      const updateTime = new Date(updatedDate);
+    const totalUserAmount = incomes?.userAmount.reduce((total: number, obj) => {
+      const objTime = new Date(obj.date);
+      const updateTime = new Date(updatedAt);
       if (objTime > updateTime) {
         return total + +obj.amount;
       }
@@ -123,11 +124,11 @@ const UserUpdate = async (_id: string) => {
     }, 0);
 
     // Calculate total expenses
-    const totalExpenses = expenses.recharge.reduce((total: number, obj) => {
-      const objTime = new Date(obj.time);
-      const updateTime = new Date(updatedDate);
+    const totalExpenses = expenses?.recharge.reduce((total: number, obj) => {
+      const objTime = new Date(obj.date);
+      const updateTime = new Date(updatedAt);
       if (objTime > updateTime) {
-        return total + +obj.amount;
+        return total + +obj.plan;
       }
       return total;
     }, 0);
@@ -135,11 +136,11 @@ const UserUpdate = async (_id: string) => {
     // Calculate new balance
     const newBalance =
       totalIncome +
-      totalReferralMoney +
-      totalTopUpAmount +
-      totalUserAmount +
+      (totalReferralMoney || 0) +
+      (totalTopUpAmount || 0) +
+      (totalUserAmount || 0) +
       Balance -
-      totalExpenses;
+      (totalExpenses || 0);
 
     // Update user document
     const updatedUser = await User.findByIdAndUpdate(

@@ -1,11 +1,11 @@
 import express from "express";
 
 import {
-  changePassword,
+  // changePassword,
   sendMoney,
   topUp,
   withdraw,
-  setPassword,
+  // setPassword,
   accountPaymentVerification,
   recharge,
   invest,
@@ -13,6 +13,7 @@ import {
   genReferCode,
   addFundsPaymentVerification,
   accountPaymentVerificationSendMoney,
+  verifyBalanceAccessPin,
 } from "../controllers/Account"; // Assuming controllers export functions
 import {} from "../controllers/Account";
 import {
@@ -28,13 +29,18 @@ import allMessages from "../controllers/allMessages";
 
 const myAccountRoute = express.Router();
 
-myAccountRoute.route("/change-password").post(UserAuthenticate, changePassword);
-myAccountRoute.route("/set-password").post(UserAuthenticate, setPassword);
+// myAccountRoute.route("/change-password").post(UserAuthenticate, changePassword);
+// myAccountRoute.route("/set-password").post(UserAuthenticate, setPassword);
 myAccountRoute.route("/account-send-money").post(UserAuthenticate, sendMoney);
-myAccountRoute.route("/account-topup").post(UserAuthenticate, topUp);
-myAccountRoute.route("/account-withdraw").post(UserAuthenticate, withdraw);
 myAccountRoute.route("/account-recharge").post(UserAuthenticate, recharge);
-myAccountRoute.route("/account-invest").post(UserAuthenticate, invest);
+//
+myAccountRoute.route("/withdraw").post(UserAuthenticate, withdraw);
+myAccountRoute.route("/top-up").post(UserAuthenticate, topUp);
+myAccountRoute.route("/invest").post(UserAuthenticate, invest);
+myAccountRoute
+  .route("/verify/balance-access-pin")
+  .post(UserAuthenticate, verifyBalanceAccessPin);
+//
 myAccountRoute
   .route("/account-refer")
   .post(UserAuthenticate, setReferCode)
@@ -56,7 +62,7 @@ myAccountRoute
   .route("/other-check-funds/:identifier")
   .get(UserAuthenticate, checkOtherFunds);
 myAccountRoute.route("/add-other-funds").post(UserAuthenticate, addOtherFunds);
-myAccountRoute.route("/messages").get(UserAuthenticate, allMessages);
+// myAccountRoute.route("/messages").get(UserAuthenticate, allMessages);
 myAccountRoute.route("/message-send").post(UserAuthenticate, sendMessage);
 myAccountRoute.route("/message/join").post(UserAuthenticate, join);
 myAccountRoute

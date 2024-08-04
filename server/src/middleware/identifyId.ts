@@ -25,7 +25,7 @@ const identificationService = async (identifyId: string, rootUser?: IUser) => {
           doc,
           type: "contact",
           contact: regexTrimmedContact[0],
-          sameAccount: rootUser?.contact === +regexTrimmedContact[0],
+          sameAccount: rootUser?.contact === regexTrimmedContact[0],
         };
       } else {
         return { error: "Invalid Contact" };
@@ -68,7 +68,7 @@ const identificationService = async (identifyId: string, rootUser?: IUser) => {
           referCode: identifyId,
           sameAccount: rootUser?.referCode === identifyId,
         };
-      } else return { error: "invalid ReferCode" };
+      } else return { error: "invalid username" };
     } else {
       return { error: "Invalid IdentifyId" };
     }

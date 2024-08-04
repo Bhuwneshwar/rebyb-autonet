@@ -10,6 +10,8 @@ import instance from "../middleware/Razorpay";
 import { generateDueFunds } from "../controllers/SeparatesFunctions";
 import dotenv from "dotenv";
 import { IReq } from "../types";
+import Temporary from "../models/Temporary";
+import { ObjectId } from "mongoose";
 
 dotenv.config();
 
@@ -44,108 +46,6 @@ const buyAutoNet = async (req: IReq, res: Response) => {
   // } catch (e) {
   //   console.error(e);
   // }
-};
-
-const changePassword = async (req: IReq, res: Response) => {
-  try {
-    console.log({ ...req.body });
-    const { oldPassword, newPassword } = req.body;
-    const db_password = req.rootUser?.password;
-
-    if (!db_password)
-      return res.status(400).json({
-        error: "You should set your password at '/api/set-password'",
-      });
-
-    if (
-      newPassword &&
-      typeof newPassword === "string" &&
-      newPassword.length >= 4
-    ) {
-      // Proceed with password change logic
-    } else {
-      return res.status(400).json({
-        error: "Your new password must be at least 4 characters long",
-      });
-    }
-
-    if (
-      oldPassword &&
-      typeof oldPassword === "string" &&
-      oldPassword.length >= 4
-    ) {
-      // Proceed with password change logic
-    } else {
-      return res.status(400).json({
-        error: "Your old password must be at least 4 characters long",
-      });
-    }
-
-    const IsMatch = await bcrypt.compare(oldPassword, db_password);
-
-    if (!IsMatch)
-      return res.status(400).json({ error: "Cannot match password" });
-
-    const hashed_password = await bcrypt.hash(newPassword, 12);
-    console.log({ hashed_password });
-
-    const setPass = await User.findByIdAndUpdate(
-      req.userId,
-      { password: hashed_password },
-      { new: true }
-    );
-    console.log({ setPass });
-    return res.json({
-      success: true,
-      message: "Your password has been changed",
-    });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Something went wrong" });
-  }
-};
-
-const setPassword = async (req: IReq, res: Response) => {
-  try {
-    console.log({ ...req.body });
-    const { newPassword } = req.body;
-    const db_password = req.rootUser?.password;
-
-    if (db_password)
-      return res.status(400).json({
-        error: "You should change your password at '/api/change-password'",
-      });
-
-    if (
-      newPassword &&
-      typeof newPassword === "string" &&
-      newPassword.length >= 4
-    ) {
-      // Proceed with set password logic
-    } else {
-      return res.status(400).json({
-        error: "Your new password must be at least 4 characters long",
-      });
-    }
-
-    const hashed_password = await bcrypt.hash(newPassword, 12);
-    console.log({ hashed_password });
-
-    const setPass = await User.findByIdAndUpdate(
-      req.userId,
-      { password: hashed_password },
-      { new: true }
-    );
-    console.log({ setPass });
-    res.json({
-      success: true,
-      newPassword: true,
-      message: "Your password has been saved",
-    });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Something went wrong" });
-  }
 };
 
 const sendMoney = async (req: IReq, res: Response) => {
@@ -247,27 +147,64 @@ const sendMoney = async (req: IReq, res: Response) => {
   }
 };
 
+const topUpComplete = async (
+  req: Request,
+  res: Response,
+  amount: number,
+  userId: ObjectId
+) => {
+  try {
+    const updatedDoc = await User.findByIdAndUpdate(
+      userId,
+      {
+        $inc: { Balance: amount },
+      },
+      { new: true }
+    );
+
+    res.send({ success: true, Balance: updatedDoc?.Balance, type: "top-up" });
+    console.log("Top-up successful");
+  } catch (error) {
+    console.log("at topUpComplete function", error);
+    res.send({ error: "Something went wrong!" });
+  }
+};
+
 const topUp = async (req: IReq, res: Response) => {
   try {
     console.log(req.body);
+    if (!req.rootUser) {
+      return res.send({ error: "please login" });
+    }
     const { amount }: { amount: number } = req.body;
 
-    if (typeof amount !== "number") return res.json("Enter Amount");
+    if (typeof amount !== "number")
+      return res.json({ error: "Amount should be type number" });
 
     if (amount > 0) {
       // Proceed with top-up logic
     } else {
-      return res.json("Invalid amount");
+      return res.json({ error: "Amount should be grater then 0" });
     }
 
-    req.session.topup = amount;
+    // req.session.topup = amount;
     const options = {
-      amount: +amount * 100, // amount in the smallest currency unit
+      amount: amount * 100, // amount in the smallest currency unit
       currency: "INR",
       // receipt: "order_rcptid_11",
     };
     const order = await instance.orders.create(options);
-    console.log(order);
+    console.log({ order });
+
+    const temp = await Temporary.create({
+      id: order.id,
+      FunName: "top-up",
+      amount,
+      UserId: req.userId,
+      referralCode: req.rootUser.referCode,
+    });
+
+    console.log({ temp });
     return res.json({
       success: true,
       order,
@@ -278,6 +215,7 @@ const topUp = async (req: IReq, res: Response) => {
     });
   } catch (e) {
     console.error(e);
+    res.send({ error: "Something went wrong" });
   }
 };
 
@@ -333,49 +271,49 @@ const accountPaymentVerification = async (req: IReq, res: Response) => {
 
 const withdraw = async (req: IReq, res: Response) => {
   try {
-    console.log(req.body);
-    const { amount }: { amount: number } = req.body;
-
-    if (typeof amount !== "number") return res.json("Enter Amount");
-
-    if (amount > 0) {
-      // Proceed with withdrawal logic
-    } else {
-      return res.json("Invalid amount");
-    }
-
-    let realAmount = +amount;
     if (!req.rootUser) return res.send({ error: "Please login first" });
 
+    console.log(req.body);
+
+    const { amount }: { amount: number } = req.body;
+
+    if (typeof amount !== "number")
+      return res.json({ error: "Amount must be a number" });
+
+    if (amount < 1)
+      return res.json({ error: "Amount should be greater than zero" });
+
     if (req.rootUser.Balance < amount)
-      return res.json("Low balance from " + +amount);
+      return res.json("Low balance to " + amount);
 
-    const withdrawal = await User.findByIdAndUpdate(
-      req.rootUser._id,
-      {
-        $push: {
-          "expenses.withdrawOnBank": {
-            amount: realAmount,
-            to: "bank",
-          },
-        },
-        $inc: {
-          Balance: -amount,
-        },
-      },
-      { new: true }
-    );
+    res.send({ success: true });
+    // const withdrawal = await User.findByIdAndUpdate(
+    //   req.rootUser._id,
+    //   {
+    //     $push: {
+    //       "expenses.withdrawOnBank": {
+    //         amount: realAmount,
+    //         to: "bank",
+    //       },
+    //     },
+    //     $inc: {
+    //       Balance: -amount,
+    //     },
+    //   },
+    //   { new: true }
+    // );
 
-    if (withdrawal) {
-      return res.json({
-        message: "Withdrawal successful",
-        updated: await account(withdrawal),
-      });
-    } else {
-      return res.json("Withdrawal failed");
-    }
+    // if (withdrawal) {
+    //   return res.json({
+    //     message: "Withdrawal successful",
+    //     updated: await account(withdrawal),
+    //   });
+    // } else {
+    //   return res.json("Withdrawal failed");
+    // }
   } catch (e) {
     console.error(e);
+    res.send({ error: "Something went wrong" });
   }
 };
 
@@ -447,56 +385,240 @@ const recharge = async (req: IReq, res: Response) => {
 
 //invest
 
+const verifyBalanceAccessPin = async (req: IReq, res: Response) => {
+  try {
+    console.log(req.body);
+
+    if (!req.rootUser) return res.send({ error: "Please first login" });
+    const { BalancePin } = req.body;
+
+    if (typeof BalancePin !== "string")
+      return res.send({ error: " balance pin must be a string" });
+    if (BalancePin === "")
+      return res.send({ error: " balance pin is required" });
+    if (BalancePin.length !== 6)
+      return res.send({
+        error: " balance pin should 6 digits!",
+      });
+    if (!/^[\d]{6}$/.test(BalancePin))
+      return res.send({
+        error: " balance pin allow only number keys!",
+      });
+
+    if (!req.rootUser.BalanceAccessPin)
+      return res.send({ error: `Balance PIN is not set.` });
+
+    const { ExpiredAt, attempt, tempDataId } =
+      req.rootUser.BalanceAccessPinWork;
+
+    const valid = new Date(ExpiredAt) > new Date();
+    if (!valid) {
+      return res.send({
+        error: "Time out please try again",
+      });
+    }
+    if (attempt < 10) {
+      const IsMatch = await bcrypt.compare(
+        BalancePin,
+        req.rootUser.BalanceAccessPin
+      );
+
+      if (!IsMatch) {
+        await User.findByIdAndUpdate(req.userId, {
+          $set: {
+            "BalanceAccessPinWork.attempt": attempt + 1,
+          },
+        });
+        return res.json({ error: "Cannot match Balance PIN" });
+      }
+
+      const tempData = await Temporary.findById(tempDataId);
+      if (!tempData)
+        return res
+          .status(201)
+          .send({ success: true, message: "Already processed" });
+
+      console.log("Temporary data found:", tempData);
+
+      const { FunName } = tempData;
+      await tempData.deleteOne();
+
+      if (FunName === "buyFunds") {
+        const amount = tempData.golden * 500 + tempData.diamond * 1000;
+        if (amount > req.rootUser.Balance)
+          return res.send({ error: `Balance is not sufficient.` });
+
+        await User.findByIdAndUpdate(req.userId, {
+          $inc: {
+            Balance: -amount,
+          },
+        });
+
+        const invested = await buyFunds(
+          req,
+          res,
+          tempData.golden,
+          tempData.diamond,
+          tempData.UserId
+        );
+        if (invested.success) {
+          const addedExpensesInvest = await User.findByIdAndUpdate(
+            req.userId,
+            {
+              $push: {
+                "expenses.invest": {
+                  golden: tempData.golden,
+                  diamond: tempData.diamond,
+                  amount,
+                  from: "balance",
+                  date: Date(),
+                },
+              },
+            },
+            { new: true }
+          );
+          console.log({ addedExpensesInvest });
+
+          res.send({
+            ...invested,
+            type: "buy-funds-using-balance",
+            Balance: req.rootUser.Balance - amount,
+          });
+        } else {
+          await User.findByIdAndUpdate(req.userId, {
+            $inc: {
+              Balance: amount,
+            },
+          });
+          return res.send({
+            error: "Failed to buy funds",
+          });
+        }
+      }
+    } else
+      return res.send({
+        error: `cross the attempted limit. try again after 2 minutes`,
+      });
+  } catch (err) {
+    console.log(err);
+    res.send({ error: "Something went wrong" });
+  }
+};
 const invest = async (req: IReq, res: Response) => {
   try {
     console.log(req.body);
 
-    const { golden, diamond } = req.body;
+    if (!req.rootUser) return res.send({ error: "Please first login" });
 
-    if (+golden * 5 || +golden === 0) {
-    } else return res.send("Invalid golden");
-    if (+diamond * 5 || +diamond === 0) {
-    } else return res.send("Invalid diamond");
+    const { golden, diamond, from, BalancePin } = req.body;
 
-    if (+diamond + +golden > 0) {
-    } else return res.send("Invalid diamond or golden");
-    if (!req.rootUser) return res.send({ error: "please login first" });
+    if (typeof golden !== "number" || !Number.isInteger(golden))
+      return res.send({ error: "Invalid golden fund Count" });
+
+    if (typeof diamond !== "number" || !Number.isInteger(diamond))
+      return res.send({ error: "Invalid diamond fund Count" });
+
+    if (typeof from !== "string")
+      return res.send({ error: "from should be string " });
+
+    if (golden + diamond < 1)
+      return res.send({ error: "at least choose one fund" });
 
     const { arrDiamondFund, arrGoldenFund } = await generateDueFunds(
       req.rootUser
     );
-    if (arrGoldenFund && arrDiamondFund) {
-    } else return res.send({ error: "something went wrong" });
 
     if (arrGoldenFund.length < golden)
-      return res.send(`you can buy only ${arrGoldenFund} GoldenFund now.`);
-    if (arrDiamondFund.length < +diamond)
-      return res.send(`you can buy only ${arrDiamondFund} DiamondFund now.`);
+      return res.send({
+        error: `you can buy only ${arrGoldenFund.length} GoldenFund now.`,
+      });
+    if (arrDiamondFund.length < diamond)
+      return res.send({
+        error: `you can buy only ${arrDiamondFund.length} DiamondFund now.`,
+      });
 
-    req.session.newBuyFunds = {
-      diamond: diamond,
-      golden: golden,
-    };
+    switch (from) {
+      case "balance":
+        {
+          if (!req.rootUser.BalanceAccessPin)
+            return res.send({ error: `Balance PIN is not set.` });
 
-    const amount = +golden * 500 + +diamond * 1000;
-    const options = {
-      amount: amount * 100, // amount in the smallest currency unit
-      currency: "INR",
-    };
+          const amount = golden * 500 + diamond * 1000;
+          if (amount > req.rootUser.Balance)
+            return res.send({ error: `Balance is not sufficient.` });
 
-    const order = await instance.orders.create(options);
-    console.log(order);
+          const temp = await Temporary.create({
+            id: Math.random() * 100 + Date.now(),
+            FunName: "buyFunds",
+            diamond,
+            golden,
+            UserId: req.userId,
+            referralCode: req.rootUser.referCode,
+          });
 
-    return res.send({
-      success: true,
-      order,
-      key: process.env.RAZORPAY_API_KEY,
-      name: req.rootUser.name,
-      email: req.rootUser.email || "krabi6563@gmail.com",
-      contact: req.rootUser.contact,
-    });
+          console.log({ temp });
+          const updatedBalanceWork = await User.findByIdAndUpdate(req.userId, {
+            $set: {
+              BalanceAccessPinWork: {
+                // amount,
+                // reason: "buyFunds",
+                ExpiredAt: new Date(Date.now() + 1000 * 60 * 2),
+                attempt: 1,
+                tempDataId: temp._id,
+              },
+            },
+          });
+          console.log({ updatedBalanceWork });
+
+          return res.send({
+            requestBalancePin: true,
+            amount,
+            message: "Please enter balance access PIN",
+          });
+        }
+
+        break;
+      case "account":
+        const amount = golden * 500 + diamond * 1000;
+        const options = {
+          amount: amount * 100, // amount in the smallest currency unit
+          currency: "INR",
+        };
+
+        const order = await instance.orders.create(options);
+        console.log({ order });
+
+        const temp = await Temporary.create({
+          id: order.id,
+          FunName: "buyFunds",
+          diamond,
+          golden,
+          UserId: req.userId,
+          referralCode: req.rootUser.referCode,
+        });
+
+        console.log({ temp });
+
+        return res.send({
+          success: true,
+          order,
+          key: process.env.RAZORPAY_API_KEY,
+          name: req.rootUser.name,
+          email: req.rootUser.email || "krabi6563@gmail.com",
+          contact: req.rootUser.contact,
+        });
+
+      default:
+        return res.send({ error: "from should be balance/account " });
+    }
+
+    // req.session.newBuyFunds = {
+    //   diamond: diamond,
+    //   golden: golden,
+    // };
   } catch (e) {
     console.log(e);
+    return res.status(500).json({ error: "Server Error" });
   }
 };
 
@@ -518,12 +640,11 @@ const addFundsPaymentVerification = async (req: IReq, res: Response) => {
     const signatureIsValid = expectedSignature === razorpay_signature;
     if (signatureIsValid && req.userId) {
       const result = await buyFunds(
+        req,
+        res,
         req.session.newBuyFunds.golden,
         req.session.newBuyFunds.diamond,
-        req.userId,
-        razorpay_order_id,
-        razorpay_signature,
-        razorpay_payment_id
+        req.userId
       );
     } else return res.send({ message: "payment failed" });
   } catch (e) {
@@ -677,15 +798,17 @@ const genReferCode = async (req: Request, res: Response) => {
 };
 
 export {
-  changePassword,
   sendMoney,
-  topUp,
   withdraw,
-  setPassword,
   accountPaymentVerification,
   getDueFunds,
   recharge,
+  //
+  topUpComplete,
+  topUp,
   invest,
+  verifyBalanceAccessPin,
+  //
   setReferCode,
   genReferCode,
   addFundsPaymentVerification,

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import PaymentUsingRazorpay from "../utils/PaymentUsingRazorpay";
+import { useParams } from "react-router-dom";
+import { paymentUsingRazorpay } from "../utils/PaymentUsingRazorpay";
 import { useGlobalContext } from "../MyRedux";
 import PriorityDragable from "../components/PriorityDragable";
 import ArrowForwardIos from "@mui/icons-material/ArrowForwardIos";
@@ -70,7 +70,7 @@ interface IinitialData {
 }
 
 const Signup = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const { dispatch } = useGlobalContext();
 
@@ -86,7 +86,7 @@ const Signup = () => {
   const [curOpera3, setCurOpera3] = useState<any[]>([]);
   const [details, setDetails] = useState<Details>({
     name: "Bhuwneshwar Mandal",
-    age: 23,
+    age: 24,
     gender: "male",
     phoneNumber: "62050",
     email: "krabi6563@gmail.com",
@@ -107,7 +107,7 @@ const Signup = () => {
     ExistingValiditytwo: 0,
     ExistingValiditythree: 0,
     autoRecharge: true,
-    transactionMethod: "",
+    transactionMethod: "none",
     autoWithdraw: false,
     upi: "",
     ifsc: "",
@@ -121,11 +121,6 @@ const Signup = () => {
     SelectedPlan1: "",
     SelectedPlan2: "",
     SelectedPlan3: "",
-  });
-  const [notify, setNotify] = useState({
-    num1: "",
-    num2: "",
-    num3: "",
   });
 
   const initial = async () => {
@@ -157,78 +152,40 @@ const Signup = () => {
     }));
   }, [data, priority]);
 
-  // useEffect(() => {
-  //   console.log(details.opera1);
-  //   if (data) checkOperator(details.opera1, setCurOpera1);
-  // }, [details.opera1]);
-
-  // useEffect(() => {
-  //   if (data) checkOperator(details.opera2, setCurOpera2);
-  // }, [details.opera2]);
-
-  // useEffect(() => {
-  //   if (data) checkOperator(details.opera3, setCurOpera3);
-  // }, [details.opera3]);
-
-  // const checkOperator = (
-  //   opera: string,
-  //   fun: React.Dispatch<React.SetStateAction<any[]>>
-  // ) => {
-  //   switch (opera) {
-  //     case "jio":
-  //       fun(data.RechargePlans.jio);
-  //       break;
-  //     case "airtel":
-
-  //       fun(data.RechargePlans.airtel);
-  //       break;
-  //     case "vi":
-  //       fun(data.RechargePlans.vi);
-  //       break;
-  //     case "bsnl":
-  //       fun(data.RechargePlans.bsnl);
-  //       break;
-  //     case "mtnl delhi":
-  //       fun(data.RechargePlans.mtnlDelhi);
-  //       break;
-  //     case "mtnl mumbai":
-  //       fun(data.RechargePlans.mtnlMumbai);
-  //       break;
-  //     default:
-  //       fun([]);
-  //   }
-  // };
-
-  const diamondOpt = (dya: number) => {
-    let opt: number[] = [];
-    for (let i = 1; i <= dya; i++) {
-      opt.push(i);
-    }
-    console.log(opt);
-    return opt;
-  };
-  // console.log("details", details);
-
   const submit = async () => {
     try {
+      console.log(JSON.stringify(details, null, 2));
       // alert("Submit");
       // e.preventDefault();
       dispatch("loading", true);
-      const res = await axios.post("/api/v1/registration", details, {
-        withCredentials: true,
-      });
+      const res = await axios.post(
+        "/api/v1/registration",
+        {
+          ...details,
+          age: +details.age,
+          golden: +details.golden,
+          diamond: +details.diamond,
+          ExistingValidityOne: +details.ExistingValidityOne,
+          ExistingValiditytwo: +details.ExistingValiditytwo,
+          ExistingValiditythree: +details.ExistingValiditythree,
+          withdraw_perc: +details.withdraw_perc,
+        },
+        {
+          withCredentials: true,
+        }
+      );
       console.log({ data: res.data });
 
       if (res.data.success) {
         const { key, name, email, contact, order } = res.data;
 
-        PaymentUsingRazorpay({
+        paymentUsingRazorpay({
           key,
           name,
           email,
           contact,
           order,
-          callfuntion: paymentVerify,
+          callBackFunction: paymentVerify,
         });
       }
       if (res.data.error) {
@@ -246,19 +203,88 @@ const Signup = () => {
   };
 
   const paymentVerify = async (response: any) => {
-    alert("redirecting...");
+    // alert("redirecting...");
     try {
+      dispatch("loading", true);
       const res = await axios.post("/api/v1/payment/verification", response, {
         withCredentials: true,
       });
 
-      console.log(res);
-      if (res.data.redirect) navigate(res.data.redirect);
-    } catch (e) {
+      console.log({ res });
+      // if (data.redirect) navigate(data.redirect);
+      if (res.data.success) {
+        toast.success("Registration successful", {
+          position: "bottom-center",
+        });
+        genPdf(res.data.username);
+      }
+      if (res.data.error) {
+        toast.error(res.data.error, {
+          position: "bottom-center",
+        });
+      }
+    } catch (e: any) {
       console.log(e);
+      toast.error(e.message, {
+        position: "bottom-center",
+      });
     }
+    dispatch("loading", false);
   };
+  const genPdf = async (identifyId: string) => {
+    try {
+      dispatch("loading", true);
+      const { data } = await axios.get("/api/v1/pdf/" + identifyId, {
+        withCredentials: true,
+      });
 
+      console.log({ data });
+
+      if (data.success) {
+        toast.success("Auto-Net card generated successfully for 1 minutes!", {
+          position: "bottom-center",
+        });
+        const protocol = window.location.protocol;
+        const hostUrl =
+          protocol +
+          "//" +
+          window.location.hostname +
+          ":" +
+          data.port +
+          data.path;
+        console.log({ hostUrl, protocol });
+
+        window.open(hostUrl, "_blank");
+
+        // if (window.location.port === "3000") {
+        //   // Construct the new URL without the port
+        //   const newUrl =
+        //     window.location.protocol +
+        //     "//" +
+        //     window.location.hostname +
+        //     window.location.pathname +
+        //     window.location.search +
+        //     window.location.hash;
+
+        //   // Redirect to the new URL
+        //   window.location.href = newUrl;
+        // }
+
+        // console.log({ hostUrl }); // Output: http://localhost:3000 (or the current host)
+      }
+      if (data.error) {
+        toast.error(data.error, {
+          position: "bottom-center",
+        });
+      }
+    } catch (e: any) {
+      console.log(e);
+      toast.error(e.message, {
+        position: "bottom-center",
+      });
+    }
+    dispatch("loading", false);
+  };
   const checkNum1 = async () => {
     try {
       if (/([5-9]{1}[0-9]{9})$/.test(details.rechNum1)) {
@@ -267,8 +293,8 @@ const Signup = () => {
         if (extracted?.length) {
           const mob = extracted[0];
 
-          const { data } = await axios.get(`/api/check/number/?mob=${mob}`);
-          console.log(data);
+          const { data } = await axios.get(`/api/v1/check/number/?mob=${mob}`);
+          console.log({ data });
           // setNotify((prev) => ({
           //   ...prev,
           //   num1: data,
@@ -292,12 +318,12 @@ const Signup = () => {
         if (extracted?.length) {
           const mob = extracted[0];
 
-          const { data } = await axios.get(`/api/check/number/?mob=${mob}`);
-          console.log(data);
-          setNotify((prev) => ({
-            ...prev,
-            num2: data,
-          }));
+          const { data } = await axios.get(`/api/v1/check/number/?mob=${mob}`);
+          console.log({ data });
+          // setNotify((prev) => ({
+          //   ...prev,
+          //   num2: data,
+          // }));
         }
       }
     } catch (error) {
@@ -317,12 +343,12 @@ const Signup = () => {
         if (extracted?.length) {
           const mob = extracted[0];
 
-          const { data } = await axios.get(`/api/check/number/?mob=${mob}`);
-          console.log(data);
-          setNotify((prev) => ({
-            ...prev,
-            num3: data,
-          }));
+          const { data } = await axios.get(`/api/v1/check/number/?mob=${mob}`);
+          console.log({ data });
+          // setNotify((prev) => ({
+          //   ...prev,
+          //   num3: data,
+          // }));
         }
       }
     } catch (error) {
@@ -387,6 +413,14 @@ const Signup = () => {
   //   }));
   // };
 
+  function formatTime(milliseconds: number) {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+    return `Please wait: ${minutes}:${seconds} seconds`;
+  }
+  const [showDueTimeContact, setShowDueTimeContact] = useState("");
+  let idOfTimeContact: any;
   const sendPhoneOtp = async () => {
     try {
       dispatch("loading", true);
@@ -395,13 +429,37 @@ const Signup = () => {
       });
       console.log({ ...res.data });
       if (res.data.success) {
-        setDetails({ ...details, phoneOtp: res.data.otp });
+        setDetails({
+          ...details,
+          phoneOtp: res.data.otp,
+          phoneNumber: res.data.contact,
+        });
         toast.success("Otp sent successfully", {
           position: "bottom-center",
         });
       }
       if (res.data.error) {
         toast.error(res.data.error, {
+          position: "bottom-center",
+        });
+      }
+      if (res.data.dueTimeMs) {
+        let dueTimeMs = res.data.dueTimeMs; // 30 seconds in milliseconds
+        setShowDueTimeContact(formatTime(dueTimeMs));
+
+        if (idOfTimeContact) clearInterval(idOfTimeContact);
+        idOfTimeContact = setInterval(() => {
+          dueTimeMs -= 1000;
+
+          if (dueTimeMs < 0) {
+            clearInterval(idOfTimeContact);
+            setShowDueTimeContact("");
+          } else {
+            setShowDueTimeContact(formatTime(dueTimeMs));
+          }
+        }, 1000);
+
+        toast.warning(formatTime(dueTimeMs), {
           position: "bottom-center",
         });
       }
@@ -445,7 +503,8 @@ const Signup = () => {
     }
     dispatch("loading", false);
   };
-
+  const [showDueTimeEmail, setShowDueTimeEmail] = useState("");
+  let idOfTimeEmail: any;
   const sendEmailOtp = async () => {
     try {
       dispatch("loading", true);
@@ -466,6 +525,26 @@ const Signup = () => {
       }
       if (res.data.error) {
         toast.error(res.data.error, {
+          position: "bottom-center",
+        });
+      }
+      if (res.data.dueTimeMs) {
+        let dueTimeMs = res.data.dueTimeMs; // 30 seconds in milliseconds
+        setShowDueTimeEmail(formatTime(dueTimeMs));
+
+        if (idOfTimeEmail) clearInterval(idOfTimeEmail);
+        idOfTimeEmail = setInterval(() => {
+          dueTimeMs -= 1000;
+
+          if (dueTimeMs < 0) {
+            clearInterval(idOfTimeEmail);
+            setShowDueTimeEmail("");
+          } else {
+            setShowDueTimeEmail(formatTime(dueTimeMs));
+          }
+        }, 1000);
+
+        toast.warning(formatTime(dueTimeMs), {
           position: "bottom-center",
         });
       }
@@ -517,25 +596,9 @@ const Signup = () => {
     }));
     event.target.select();
   };
-
-  const getPdf = async () => {
-    try {
-      let name = "Bhuwneshwar Mandal";
-      const response = await fetch(`/api/pdf/${name}`);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${name}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.log(e);
-    }
+  const setArray = (newArr: string[]) => {
+    setPriority(() => newArr);
   };
-
   return (
     data && (
       <div className="signup-form">
@@ -552,19 +615,17 @@ const Signup = () => {
                   value={details.name}
                   placeholder="Enter Name here..."
                 />
-                <p className="error">Error now name is not available</p>
               </div>
               <div className="border-label">
                 <label htmlFor="age">Age : </label>
                 <input
                   onChange={changeHandler}
-                  type="text"
+                  type="number"
                   name="age"
                   id="age"
                   value={details.age}
                   placeholder="e.g. 22.5"
                 />
-                <p className="error"></p>
               </div>
               <div className="border-label">
                 <label htmlFor="gender">Gender : </label>
@@ -580,7 +641,6 @@ const Signup = () => {
                   <option value="other">Other</option>
                   <option value="kuchv">kuchv</option>
                 </select>
-                <p className="error">Error now name is not available</p>
               </div>
             </div>
             <div className="contact-info">
@@ -598,7 +658,7 @@ const Signup = () => {
                     <ArrowForwardIos />
                   </button>
                 </div>
-                <p className="error">Error now name is not available</p>
+                <p className="error">{showDueTimeContact}</p>
               </div>
               <div className="border-label">
                 <label htmlFor="phoneOtp">OTP: </label>
@@ -616,7 +676,6 @@ const Signup = () => {
                     <ArrowForwardIos />
                   </button>
                 </div>
-                <p className="error">Error now name is not available</p>
               </div>
             </div>
             <div className="contact-info">
@@ -635,6 +694,7 @@ const Signup = () => {
                     <ArrowForwardIos />
                   </button>
                 </div>
+                <p className="error">{showDueTimeEmail}</p>
               </div>
               <div className="border-label ">
                 <label htmlFor="emailOtp">OTP : </label>
@@ -717,7 +777,6 @@ const Signup = () => {
                     value={details.rechNum1}
                     placeholder="Recharge num 1"
                   />
-                  <p>{notify.num1}</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="opera1"> Operator For Number 1</label>
@@ -732,7 +791,6 @@ const Signup = () => {
                       return <option value={v}>{v}</option>;
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="state1"> State For Number 1</label>
@@ -748,7 +806,6 @@ const Signup = () => {
                       return <option value={v}>{v}</option>;
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="SelectedPlan1">Plan For Number 1</label>
@@ -767,7 +824,6 @@ const Signup = () => {
                       );
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="num">
                   <label htmlFor="ExistingValidityOne">
@@ -784,7 +840,6 @@ const Signup = () => {
                     value={details.ExistingValidityOne}
                     placeholder="Existing Validity "
                   />
-                  <p>Error Meassage</p>
                 </div>
               </div>
               <hr />
@@ -801,7 +856,6 @@ const Signup = () => {
                     value={details.rechNum2}
                     placeholder="Recharge num 2"
                   />
-                  <p>{notify.num2}</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="opera2"> Operator For Number 2</label>
@@ -817,7 +871,6 @@ const Signup = () => {
                       return <option value={v}>{v}</option>;
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="state2"> State For Number 2</label>
@@ -833,7 +886,6 @@ const Signup = () => {
                       return <option value={v}>{v}</option>;
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="SelectedPlan2">Plan For Number 2</label>
@@ -851,7 +903,6 @@ const Signup = () => {
                       );
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="num">
                   <label htmlFor="ExistingValiditytwo">
@@ -868,7 +919,6 @@ const Signup = () => {
                     value={details.ExistingValiditytwo}
                     placeholder="Existing Validity "
                   />
-                  <p>Error Meassage</p>
                 </div>
               </div>
               <hr />
@@ -885,7 +935,6 @@ const Signup = () => {
                     value={details.rechNum3}
                     placeholder="Recharge num 3"
                   />
-                  <p>{notify.num3}</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="opera3"> Operator For Number 3</label>
@@ -901,7 +950,6 @@ const Signup = () => {
                       return <option value={v}>{v}</option>;
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="state3"> State For Number 3</label>
@@ -917,7 +965,6 @@ const Signup = () => {
                       return <option value={v}>{v}</option>;
                     })}{" "}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="opera">
                   <label htmlFor="SelectedPlan3">Plan For Number 3</label>
@@ -936,7 +983,6 @@ const Signup = () => {
                       );
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div className="num">
                   <label htmlFor="ExistingValiditythree">
@@ -952,7 +998,6 @@ const Signup = () => {
                     value={details.ExistingValiditythree}
                     placeholder="Existing Validity "
                   />
-                  <p>Error Meassage</p>
                 </div>
               </div>
             </div>
@@ -967,12 +1012,11 @@ const Signup = () => {
                     name="transactionMethod"
                     id="transactionMethod"
                   >
-                    <option value="">Select Transaction Method</option>
+                    <option value="none">None</option>
                     {data?.transactionMethods.map((method) => {
                       return <option value={method}>{method}</option>;
                     })}
                   </select>
-                  <p>Error Meassage</p>
                 </div>
                 <div
                   style={{
@@ -1013,7 +1057,6 @@ const Signup = () => {
                     value={details.ifsc}
                     placeholder="IFSC code"
                   />
-                  <p>Error Meassage</p>
                 </div>
                 <div
                   style={{
@@ -1034,7 +1077,6 @@ const Signup = () => {
                     value={details.bank}
                     placeholder="Account number"
                   />
-                  <p>Error Meassage</p>
                 </div>
                 <div
                   style={{
@@ -1057,7 +1099,6 @@ const Signup = () => {
                     value={details.confirmBank}
                     placeholder="Confirm Account number"
                   />
-                  <p>Error Meassage</p>
                 </div>
               </div>
             </div>
@@ -1065,14 +1106,13 @@ const Signup = () => {
             <h3>Username Code </h3>
             <div className="responsive ">
               <div className="input-text refer-code">
-                <label htmlFor="refered-id">Username ID</label>
+                <label htmlFor="refered-id">Referral Username ID</label>
                 <input
                   name="refer"
                   onChange={changeHandler}
                   id="refered-id"
                   value={details.refer}
                 />
-                <p>Error Meassage</p>
               </div>
               <div className="input-text refer-code">
                 <label htmlFor="refered-id">Make New Username ID</label>
@@ -1083,7 +1123,6 @@ const Signup = () => {
                   id=""
                   value={details.setRefer}
                 />
-                <p>Error Meassage</p>
               </div>
             </div>
 
@@ -1092,6 +1131,7 @@ const Signup = () => {
 
               <PriorityDragable
                 array={priority}
+                setArray={setArray}
                 changeHandler={changeHandler}
                 details={details}
                 setDetails={setDetails}

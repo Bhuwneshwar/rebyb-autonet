@@ -3,22 +3,19 @@ import DiamondFund from "../models/diamondSchema";
 import goldenFund from "../controllers/goldenFund";
 import diamondFund from "../controllers/diamondFund";
 import { ObjectId } from "mongoose";
+import { IReq } from "../types";
+import { Response } from "express";
+import { generateDueFunds } from "./SeparatesFunctions";
 
 const buyFunds = async (
+  req: IReq,
+  res: Response,
   golden: number,
   diamond: number,
-  userId: ObjectId,
-  order: string,
-  signature: string,
-  payment: string
-): Promise<{ success: boolean }> => {
+  userId: ObjectId
+) => {
   try {
-    const addGolden = async (
-      userId: ObjectId,
-      order: string,
-      payment: string,
-      signature: string
-    ): Promise<boolean> => {
+    const addGolden = async (userId: ObjectId): Promise<boolean> => {
       try {
         let lastGoldenFund = await GoldenFund.findOne().sort({
           $natural: -1,
@@ -29,9 +26,6 @@ const buyFunds = async (
           userId,
           fund: 0,
           reserveFund: 0,
-          orderId: order,
-          paymentId: payment,
-          signature,
         });
 
         const savedGoldenFund = await newGoldenFund.save();
@@ -42,11 +36,14 @@ const buyFunds = async (
         let notEvenNum = savedGoldenFund.myId - remain;
         let oneByTwoNum = notEvenNum / 2;
 
-        for (let num = 1; oneByTwoNum >= 1; num++) {
-          remain = oneByTwoNum % 2;
-          notEvenNum = oneByTwoNum - remain;
-          oneByTwoNum = notEvenNum / 2;
-
+        for (
+          let num = 1;
+          oneByTwoNum >= 1;
+          remain = oneByTwoNum % 2,
+            notEvenNum = oneByTwoNum - remain,
+            oneByTwoNum = notEvenNum / 2,
+            num++
+        ) {
           switch (num) {
             case 1:
               remained -= fund = 250;
@@ -65,7 +62,7 @@ const buyFunds = async (
           }
 
           if (fund > 0) {
-            await goldenFund(oneByTwoNum, fund);
+            await goldenFund(oneByTwoNum, fund, savedGoldenFund.myId);
           }
         }
 
@@ -84,12 +81,7 @@ const buyFunds = async (
       }
     };
 
-    const addDiamond = async (
-      userId: ObjectId,
-      order: string,
-      payment: string,
-      signature: string
-    ): Promise<boolean> => {
+    const addDiamond = async (userId: ObjectId): Promise<boolean> => {
       try {
         let lastDiamondFund = await DiamondFund.findOne().sort({
           $natural: -1,
@@ -100,9 +92,6 @@ const buyFunds = async (
           userId,
           fund: 0,
           reserveFund: 0,
-          orderId: order,
-          paymentId: payment,
-          signature,
         });
 
         const savedDiamondFund = await newDiamondFund.save();
@@ -113,11 +102,14 @@ const buyFunds = async (
         let notEvenNum = savedDiamondFund.myId - remain;
         let oneByTwoNum = notEvenNum / 2;
 
-        for (let num = 1; oneByTwoNum >= 1; num++) {
-          remain = oneByTwoNum % 2;
-          notEvenNum = oneByTwoNum - remain;
-          oneByTwoNum = notEvenNum / 2;
-
+        for (
+          let num = 1;
+          oneByTwoNum >= 1;
+          remain = oneByTwoNum % 2,
+            notEvenNum = oneByTwoNum - remain,
+            oneByTwoNum = notEvenNum / 2,
+            num++
+        ) {
           switch (num) {
             case 1:
               remained -= fund = 500;
@@ -136,7 +128,7 @@ const buyFunds = async (
           }
 
           if (fund > 0) {
-            await diamondFund(oneByTwoNum, fund);
+            await diamondFund(oneByTwoNum, fund, savedDiamondFund.myId);
           }
         }
 
@@ -156,14 +148,24 @@ const buyFunds = async (
     };
 
     for (let g = 0; g < golden; g++) {
-      await addGolden(userId, order, payment, signature);
+      await addGolden(userId);
     }
 
     for (let d = 0; d < diamond; d++) {
-      await addDiamond(userId, order, payment, signature);
+      await addDiamond(userId);
     }
 
-    return { success: true };
+    if (req.rootUser) {
+      const { arrDiamondFund, arrGoldenFund } = await generateDueFunds(
+        req.rootUser
+      );
+
+      return {
+        success: true,
+        canBuyGolden: arrGoldenFund,
+        canBuyDiamond: arrDiamondFund,
+      };
+    } else return { success: true };
   } catch (e) {
     console.log("Error in buyFunds function:", e);
     return { success: false };

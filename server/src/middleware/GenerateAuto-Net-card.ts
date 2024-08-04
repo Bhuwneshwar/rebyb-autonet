@@ -9,11 +9,11 @@ import { port } from "..";
 
 const generateIdCard = async (req: Request, res: Response) => {
   const { identifyId } = req.params;
-  console.log("generateIdCard");
+  console.log({ identifyId });
 
-  if (!identifyId) {
-    return res.status(400).json({ error: "identifyId is required" });
-  }
+  if (typeof identifyId !== "string")
+    return res.send({ error: "IdentifyId should be string" });
+  if (identifyId === "") return res.send({ error: "identifyId is required" });
 
   const identified = await identificationService(identifyId);
 
@@ -64,6 +64,8 @@ const generateIdCard = async (req: Request, res: Response) => {
       success: true,
       url: `http://localhost:${port}/certificates/${identified.doc?.referCode} [Auto-Net Card].pdf`,
       path: `/certificates/${identified.doc?.referCode} [Auto-Net Card].pdf`,
+      //comment out this
+      port: port,
     });
 
     setTimeout(() => {

@@ -2,11 +2,15 @@
 import { format } from "date-fns";
 
 export const formatDate = (dateString?: Date) => {
-  if (dateString === undefined) {
-    return "Invalid date";
+  try {
+    if (dateString === undefined) {
+      return "undefined";
+    }
+    const date = new Date(dateString);
+    return format(date, "dd-MMM-yyyy");
+  } catch (error) {
+    return dateString?.toString();
   }
-  const date = new Date(dateString);
-  return format(date, "dd-MMM-yyyy");
 };
 
 // utils/formatDate.js

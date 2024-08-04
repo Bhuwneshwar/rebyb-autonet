@@ -4,7 +4,6 @@ import axios from "axios";
 import { useGlobalContext } from "../MyRedux";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
-import Navbar from "../components/Navbar";
 const Login = () => {
   const {
     dispatch,
@@ -14,19 +13,19 @@ const Login = () => {
 
   const { url } = useParams();
 
-  const [resData, setResData] = useState("");
+  // const [resData, setResData] = useState("");
   const [loginDetails, setLoginDetails] = useState({
-    identifyId: "",
-    password: " Strong password",
-    otp: "",
     method: "password",
+    identifyId: "",
+    otp: "",
+    password: "",
   });
 
   const onSuccess = () => {
     if (url) {
       navigate(url);
     } else {
-      navigate("/dashboard");
+      // navigate("/dashboard");
     }
   };
 
@@ -42,6 +41,16 @@ const Login = () => {
     const { name, value } = e.target;
     setLoginDetails({ ...loginDetails, [name]: value });
   };
+
+  function formatTime(milliseconds: number) {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+    return `Please wait: ${minutes}:${seconds} seconds`;
+  }
+
+  const [showDueTime, setShowDueTime] = useState("");
+  let idOfTime: any;
   const sendOtp = async () => {
     try {
       dispatch("loading", true);
@@ -59,6 +68,26 @@ const Login = () => {
       }
       if (data.error) {
         toast.error(data.error, {
+          position: "bottom-center",
+        });
+      }
+      if (data.wait) {
+        let dueTimeMs = data.wait; // 30 seconds in milliseconds
+        setShowDueTime(formatTime(dueTimeMs));
+
+        if (idOfTime) clearInterval(idOfTime);
+        idOfTime = setInterval(() => {
+          dueTimeMs -= 1000;
+
+          if (dueTimeMs < 0) {
+            clearInterval(idOfTime);
+            setShowDueTime("");
+          } else {
+            setShowDueTime(formatTime(dueTimeMs));
+          }
+        }, 1000);
+
+        toast.warning(formatTime(dueTimeMs), {
           position: "bottom-center",
         });
       }
@@ -112,7 +141,8 @@ const Login = () => {
         toast.success("Login successfully!", {
           position: "bottom-center",
         });
-        navigate("/dashboard");
+        // navigate("/dashboard");
+        // onSuccess();
         dispatch("role", "user");
       }
       if (data.error) {
@@ -128,30 +158,32 @@ const Login = () => {
     }
     dispatch("loading", false);
   };
-
+  useEffect(() => {
+    if (MyDetails) onSuccess();
+  }, [MyDetails]);
   return (
     <div className="login-form">
       <form onSubmit={(e) => e.preventDefault()}>
         <h1>Login Form</h1>
         <div className="bg-white">
           <div className="input-text">
-            <label htmlFor="identifyId">Contact/ID/Email/Refer Code : </label>
+            <label htmlFor="identifyId">Contact/ID/Email/Username : </label>
             <input
               type=""
               onChange={changeHandler}
               name="identifyId"
               id="identifyId"
               value={loginDetails.identifyId}
-              placeholder="Identifier"
+              placeholder="IdentifyId"
             />
-            <p>Error Message</p>
+            <p>{showDueTime}</p>
           </div>
           <div className="swipe-side">
             <span>OTP</span>
             <div className="swipe-btn">
               <input
                 type="checkbox"
-                onChange={(e) =>
+                onChange={() =>
                   setLoginDetails({
                     ...loginDetails,
                     method:
@@ -176,13 +208,13 @@ const Login = () => {
 
               <input
                 onChange={changeHandler}
-                type=""
+                type="password"
                 name="password"
                 id="password"
                 value={loginDetails.password}
                 placeholder="password"
               />
-              <p>Error Message</p>
+              {/* <p>Error Message</p> */}
             </div>
           </div>
 
@@ -197,7 +229,7 @@ const Login = () => {
                 value={loginDetails.otp}
                 placeholder="Enter OTP"
               />
-              <p>Error Message</p>
+              {/* <p>Error Message</p> */}
             </div>
           </div>
         </div>

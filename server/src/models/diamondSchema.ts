@@ -10,7 +10,8 @@ export interface DiamondFundModel extends Document {
   paymentId: string;
   signature: string;
   fundReturnHistory: Array<{ many: number; when: Date; who: number }>;
-  buyTime: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const diamondSchema: Schema<DiamondFundModel> = new Schema(
@@ -24,12 +25,12 @@ const diamondSchema: Schema<DiamondFundModel> = new Schema(
     signature: { type: String, required: true },
     fundReturnHistory: [
       {
-        amound: { type: Number, required: true },
-        date: { type: Date, required: true },
+        many: { type: Number, required: true },
+        when: { type: Date, required: true },
         who: { type: Number, required: true },
       },
     ],
-    buyTime: { type: Date, default: Date.now },
+    // buyTime: { type: Date, default: Date.now },
   },
   {
     timestamps: true,

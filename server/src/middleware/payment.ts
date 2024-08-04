@@ -3,11 +3,18 @@ import crypto from "crypto";
 import Temporary from "../models/Temporary";
 import register from "../OnPayment/register";
 import dotenv from "dotenv";
+import buyFunds from "../controllers/buyFunds";
+import { topUpComplete } from "../controllers/Account";
+import User from "../models/UsersSchema";
+import PaymentHistory from "../models/paymentSuccessSchema";
 
+// Load environment variables
 dotenv.config();
 
 const paymentVerification = async (req: Request, res: Response) => {
   try {
+    console.log(req.body);
+
     let signatureIsValid = false;
     let signature: string;
     let paymentId: string;
@@ -18,7 +25,7 @@ const paymentVerification = async (req: Request, res: Response) => {
       req?.body?.razorpay_payment_id &&
       req?.body?.razorpay_signature
     ) {
-      // Request from client
+      // Client-side request
       orderId = req.body.razorpay_order_id;
       paymentId = req.body.razorpay_payment_id;
       signature = req.body.razorpay_signature;
@@ -38,7 +45,7 @@ const paymentVerification = async (req: Request, res: Response) => {
       req?.body?.payload?.payment?.entity?.order_id &&
       req?.body?.payload?.payment?.entity?.id
     ) {
-      // Request from Razorpay webhook
+      // Razorpay webhook request
       orderId = req.body.payload.payment.entity.order_id;
       paymentId = req.body.payload.payment.entity.id;
       signature = req.headers["x-razorpay-signature"] as string;
@@ -52,7 +59,7 @@ const paymentVerification = async (req: Request, res: Response) => {
       console.log("Generated signature from Razorpay:", expectedSignature);
 
       signatureIsValid = expectedSignature === signature;
-      res.status(200).send("ok");
+      // res.status(200).send("ok");
     } else {
       return res
         .status(400)
@@ -60,19 +67,75 @@ const paymentVerification = async (req: Request, res: Response) => {
     }
 
     if (signatureIsValid) {
+      const newPaymentHistory = await PaymentHistory.create({
+        paymentId,
+        signature,
+        orderId,
+      });
+
+      // Add your logic for fund allocation here if needed
+
+      // const wait = (ms: number) => {
+      //   setTimeout(() => {
+      //     console.log("Waited for " + ms / 1000 + " seconds.");
+      //   }, ms);
+      // };
+      // wait(1000);
+
       const temp = await Temporary.findOne({ id: orderId });
       if (!temp) {
-        return res.status(201).send("Already processed");
+        return res
+          .status(201)
+          .send({ success: true, message: "Already processed" });
       }
+
+      await PaymentHistory.findByIdAndUpdate(newPaymentHistory._id, {
+        $set: {
+          userId: temp.UserId,
+          amount: temp.amount,
+        },
+      });
 
       console.log("Temporary data found:", temp);
 
       const { FunName } = temp;
+      await temp.deleteOne();
 
       if (FunName === "register") {
-        await register(req, res, temp, orderId, paymentId, signature);
+        await register(req, res, temp);
       }
-      await temp.deleteOne();
+      if (FunName === "buyFunds") {
+        const invested = await buyFunds(
+          req,
+          res,
+          temp.golden,
+          temp.diamond,
+          temp.UserId
+        );
+        if (invested.success) {
+          const addedExpensesInvest = await User.findByIdAndUpdate(
+            temp.UserId,
+            {
+              $push: {
+                "expenses.invest": {
+                  golden: temp.golden,
+                  diamond: temp.diamond,
+                  amount: temp.amount,
+                  from: "account",
+                  date: Date(),
+                },
+              },
+            },
+            { new: true }
+          );
+          console.log({ addedExpensesInvest });
+          res.send({ ...invested, type: "invested-from-account" });
+        }
+      }
+      if (FunName === "top-up") {
+        topUpComplete(req, res, temp.amount, temp.UserId);
+      }
+      // res.status(200).send("ok");
     } else {
       return res.status(400).send("Invalid signature");
     }

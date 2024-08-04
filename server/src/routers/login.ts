@@ -17,6 +17,7 @@ loginRouter.route("/send-otp").post(loginSendOtp);
 loginRouter.route("/verify-otp").post(loginVerifyOtp);
 loginRouter.route("/myaccount").get(UserAuthenticate, myAccount); // Assuming myAccount is a function
 loginRouter.route("/logout").get(logout);
+
 loginRouter.route("/admin").get(admin); // Assuming admin is a function with appropriate permissions check
 loginRouter.route("/admin-work").get(adminWork); // Assuming adminWork is a function with appropriate permissions check
 

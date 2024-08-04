@@ -1,9 +1,9 @@
-import React, { ChangeEvent, MouseEvent } from "react";
+import React, { ChangeEvent, MouseEvent, useEffect, useState } from "react";
 import { useGlobalContext } from "../MyRedux";
 import SendIcon from "@mui/icons-material/Send";
 import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import axios from "axios";
-import PaymentUsingRazorpay from "../utils/PaymentUsingRazorpay";
+import { paymentUsingRazorpay } from "../utils/PaymentUsingRazorpay";
 import { toast } from "react-toastify";
 
 interface ChatProps {
@@ -64,8 +64,16 @@ const Chat: React.FC<ChatProps> = ({
   refer,
 }) => {
   const {
+    dispatch,
     store: { activeMsgTab },
   } = useGlobalContext();
+  const [userMessagesData, setUserMessagesData] = useState({
+    name: "",
+    profileImg: "",
+    onActive: "",
+  });
+
+  const [messages, setMessages] = useState([]);
 
   const sendMoneyFromBalance = async () => {
     try {
@@ -116,7 +124,7 @@ const Chat: React.FC<ChatProps> = ({
       }
       const { contact, key, email, name, order, payNow } = data;
       if (payNow) {
-        PaymentUsingRazorpay({
+        paymentUsingRazorpay({
           key,
           name,
           email,
@@ -129,27 +137,70 @@ const Chat: React.FC<ChatProps> = ({
       console.log({ error });
     }
   };
-
+  const initialMessage = async () => {
+    try {
+      dispatch("loading", true);
+      const { data } = await axios.get(`/api/v1/messages/${refer}`, {
+        withCredentials: true,
+      });
+      console.log({ data });
+      if (data.success) {
+        setUserMessagesData({
+          name: data.name,
+          profileImg: data.profileImg,
+          onActive: data.onActive,
+        });
+        setMessages(data.messages);
+      }
+      if (data.error) {
+      }
+      // if (data.redirect) {
+      //   navigate(data.redirect);
+      // }
+      // if (data.info) {
+      //   const allmesg = data.mySms
+      //     .concat(data.senderSms)
+      //     .sort(
+      //       (a: any, b: any) =>
+      //         new Date(a.time).getTime() - new Date(b.time).getTime()
+      //     );
+      //   setUserMessages({
+      //     name: data.info.name,
+      //     My: data.mySms,
+      //     Sender: data.senderSms,
+      //     allMessages: allmesg,
+      //   });
+      //   setCanBuyOthers({
+      //     buyGolden: data.info.goldenFunds,
+      //     buyDiamond: data.info.diamondFunds,
+      //   });
+      // }
+    } catch (e: any) {
+      console.log("initial error :", e);
+      toast.error(e.message, { position: "bottom-center" });
+    }
+    dispatch("loading", false);
+  };
+  useEffect(() => {
+    initialMessage();
+  }, []);
   return (
     <div className="chat">
       <div className="lastMessage">
         <figure>
-          <img
-            src="https://th.bing.com/th/id/OIP.vAuCou6PorBYkntC17e0QAAAAA?rs=1&pid=ImgDetMain"
-            alt={"icon"}
-          />
+          <img src={userMessagesData.profileImg} alt={"icon"} />
         </figure>
         <div className="info">
-          <h3>{"Bikram kumar"}</h3>
+          <h3>{userMessagesData.name}</h3>
         </div>
         <div className="time">
-          <span>Active</span>
-          <div>12:00 AM</div>
+          {/* <span>Active</span> */}
+          <div>{userMessagesData.onActive}</div>
         </div>
       </div>
       <div className="chating">
         <div>
-          {userMessages.allMessages.map((sms) => {
+          {messages.map((sms: any) => {
             let reqSms: any = {};
             try {
               reqSms = JSON.parse(sms.message);
@@ -301,152 +352,192 @@ const Chat: React.FC<ChatProps> = ({
           })}
         </div>
       </div>
-      <div className="actions">
-        {activeMsgTab === "simple-msg" ? (
-          <>
-            <textarea
-              name="newMessage"
-              onChange={handleChange}
-              value={newMessage}
-            ></textarea>
-            <SendIcon onClick={() => sendMessage()} />
-          </>
-        ) : activeMsgTab === "send-money" ? (
-          <div className="send-money">
-            <div>
-              <p>Balance</p>
-              <div className="rupee">
-                <CurrencyRupeeIcon />
-                {Balance}/-
+      <div className="action-btns">
+        <div className="actions">
+          {activeMsgTab === "simple-msg" ? (
+            <div className="simple-msg">
+              <textarea
+                name="newMessage"
+                onChange={handleChange}
+                value={newMessage}
+                placeholder="Message Here"
+              ></textarea>
+              <button onClick={() => sendMessage()}>
+                <SendIcon />
+              </button>
+            </div>
+          ) : activeMsgTab === "send-money" ? (
+            <div className="send-money">
+              <div>
+                <label htmlFor="amount">Enter Amount</label>
+
+                <div className="rupee">
+                  <CurrencyRupeeIcon />
+                  <input
+                    name="sdmn"
+                    type="text"
+                    id="amount"
+                    value={input_data.sdmn}
+                    placeholder="99.00"
+                    onChange={handleChange}
+                    max={200}
+                    min={0}
+                  />
+                </div>
               </div>
+
+              <button onClick={sendMoneyFromBalance}>
+                from balance
+                <SendIcon />
+              </button>
+              <button onClick={sendMoneyFromBank}>
+                from bank
+                <SendIcon />
+              </button>
             </div>
-            <div>
-              <label>
+          ) : activeMsgTab === "buy-funds" ? (
+            <div className="buy-funds-req">
+              <div>
+                <p>Select Funds</p>
+                <label>
+                  Golden Funds
+                  <select
+                    name="buyGoldenSelected"
+                    value={input_data.buyGoldenSelected}
+                    onChange={handleChange}
+                  >
+                    <option value="">Choose..</option>
+                    {canBuy.buyGolden.map((v, i) => (
+                      <option value={v} key={i}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Diamond Funds
+                  <select
+                    name="buyDiamondSelected"
+                    value={input_data.buyDiamondSelected}
+                    onChange={handleChange}
+                  >
+                    <option value="">Choose..</option>
+                    {canBuy.buyDiamond.map((v, i) => (
+                      <option value={v} key={i}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <button onClick={() => sendMessage("buy")}>
+                {" "}
+                Send Buy Fund Request <SendIcon />
+              </button>
+            </div>
+          ) : activeMsgTab === "send-money-others" ? (
+            <div className="send-money-others">
+              <div>
+                <p>Select Funds</p>
+                <label>
+                  Golden Funds
+                  <select
+                    name="othersGoldenSelected"
+                    value={input_data.othersGoldenSelected}
+                    onChange={handleChange}
+                  >
+                    <option value="">Choose..</option>
+                    {canBuyOthers.buyGolden.map((v, i) => (
+                      <option value={v} key={i}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Diamond Funds
+                  <select
+                    name="othersDiamondSelected"
+                    value={input_data.othersDiamondSelected}
+                    onChange={handleChange}
+                  >
+                    <option value="">Choose..</option>
+                    {canBuyOthers.buyDiamond.map((v, i) => (
+                      <option value={v} key={i}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div>
+                <label>
+                  <p>Enter Money</p>
+                  <input
+                    type="text"
+                    name="fromAccountSendMoney"
+                    value={input_data.fromAccountSendMoney}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
+              <button onClick={buyForother}>Send Money</button>
+            </div>
+          ) : activeMsgTab === "send-help" ? (
+            <div className="send-help">
+              <div>
                 <p>Enter Amount</p>
-                <input
-                  name="sdmn"
-                  type="text"
-                  value={input_data.sdmn}
-                  onChange={handleChange}
-                />
-              </label>
+                <label>
+                  Money
+                  <input
+                    type="text"
+                    name="MoneyHelp"
+                    value={input_data.MoneyHelp}
+                    onChange={handleChange}
+                  />
+                </label>
+                <label>
+                  From Account
+                  <input
+                    type="text"
+                    name="fromAccount"
+                    value={input_data.fromAccount}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
+              <button onClick={sendMoney}>Send Money</button>
             </div>
-            <button onClick={sendMoneyFromBalance}>Send from balance</button>
-            <button onClick={sendMoneyFromBank}>Send from bank</button>
-          </div>
-        ) : activeMsgTab === "buy-funds" ? (
-          <div className="buy-funds">
-            <div>
-              <p>Select Funds</p>
-              <label>
-                Golden Funds
-                <select
-                  name="buyGoldenSelected"
-                  value={input_data.buyGoldenSelected}
-                  onChange={handleChange}
-                >
-                  <option value="">Choose..</option>
-                  {canBuy.buyGolden.map((v, i) => (
-                    <option value={v} key={i}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Diamond Funds
-                <select
-                  name="buyDiamondSelected"
-                  value={input_data.buyDiamondSelected}
-                  onChange={handleChange}
-                >
-                  <option value="">Choose..</option>
-                  {canBuy.buyDiamond.map((v, i) => (
-                    <option value={v} key={i}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <SendIcon onClick={() => sendMessage("buy")} />
-          </div>
-        ) : activeMsgTab === "send-money-others" ? (
-          <div className="send-money-others">
-            <div>
-              <p>Select Funds</p>
-              <label>
-                Golden Funds
-                <select
-                  name="othersGoldenSelected"
-                  value={input_data.othersGoldenSelected}
-                  onChange={handleChange}
-                >
-                  <option value="">Choose..</option>
-                  {canBuyOthers.buyGolden.map((v, i) => (
-                    <option value={v} key={i}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Diamond Funds
-                <select
-                  name="othersDiamondSelected"
-                  value={input_data.othersDiamondSelected}
-                  onChange={handleChange}
-                >
-                  <option value="">Choose..</option>
-                  {canBuyOthers.buyDiamond.map((v, i) => (
-                    <option value={v} key={i}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div>
-              <label>
-                <p>Enter Money</p>
-                <input
-                  type="text"
-                  name="fromAccountSendMoney"
-                  value={input_data.fromAccountSendMoney}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
-            <button onClick={buyForother}>Send Money</button>
-          </div>
-        ) : activeMsgTab === "send-help" ? (
-          <div className="send-help">
-            <div>
-              <p>Enter Amount</p>
-              <label>
-                Money
-                <input
-                  type="text"
-                  name="MoneyHelp"
-                  value={input_data.MoneyHelp}
-                  onChange={handleChange}
-                />
-              </label>
-              <label>
-                From Account
-                <input
-                  type="text"
-                  name="fromAccount"
-                  value={input_data.fromAccount}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
-            <button onClick={sendMoney}>Send Money</button>
-          </div>
-        ) : (
-          ""
-        )}
+          ) : (
+            ""
+          )}
+        </div>
+        <div className="tabs">
+          <button
+            className={activeMsgTab === "simple-msg" ? "active" : ""}
+            onClick={(e) => dispatch("activeMsgTab", "simple-msg")}
+          >
+            simple Message
+          </button>
+          <button
+            className={activeMsgTab === "send-money" ? "active" : ""}
+            onClick={(e) => dispatch("activeMsgTab", "send-money")}
+          >
+            Send Money
+          </button>
+          <button
+            className={activeMsgTab === "buy-funds" ? "active" : ""}
+            onClick={(e) => dispatch("activeMsgTab", "buy-funds")}
+          >
+            Send Buy Fund Request
+          </button>
+          <button
+            className={activeMsgTab === "send-help" ? "active" : ""}
+            onClick={(e) => dispatch("activeMsgTab", "send-help")}
+          >
+            Buy Fund For User
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -54,14 +54,7 @@ const AutoRegistration = async (req: Request, res: Response) => {
 
         if (isUserPhone) {
           console.log("contact found");
-          await buyFunds(
-            golden,
-            diamond,
-            isUserPhone._id,
-            "order: any",
-            "signature: any",
-            "payment: any"
-          );
+          await buyFunds(req, res, golden, diamond, isUserPhone._id);
         } else {
           console.log("contact not found");
           const f = await Admin.findByIdAndUpdate(

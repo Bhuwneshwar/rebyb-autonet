@@ -20,7 +20,7 @@ import generateCertificate from "../middleware/GenerateAuto-Net-card";
 import cookieTokenVerifyOptional from "../middleware/cookieTokenVerifyOptional";
 
 router.route("/registration").get(registration).post(registrationPost);
-router.route("/check/number/:mob").get(checkNumber);
+router.route("/check/number/").get(checkNumber);
 router
   .route("/payment/verification")
   .post(ReferralMiddleware, paymentVerification);

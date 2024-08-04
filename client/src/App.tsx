@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense, ChangeEvent } from "react";
+import React, { useEffect, Suspense } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import axios from "axios";
 const Signup = React.lazy(() => import("./pages/Signup"));
@@ -13,6 +13,7 @@ const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const MyAccount = React.lazy(() => import("./components/MyAccount"));
 const Password = React.lazy(() => import("./pages/PasswordSet"));
 const PaymentScanner = React.lazy(() => import("./pages/PaymentScanner"));
+const History = React.lazy(() => import("./pages/History"));
 
 import "./App.css";
 import { useGlobalContext } from "./MyRedux";
@@ -23,6 +24,7 @@ import { toast } from "react-toastify";
 import { IMyDetails } from "./MyRedux/Store";
 import Navbar from "./components/Navbar";
 import HeaderContent from "./components/HeaderContent";
+import BalancePinForm from "./components/BalancePinForm";
 
 const App: React.FC = () => {
   const socket = useSocket();
@@ -147,7 +149,6 @@ const App: React.FC = () => {
                   <Route path="/admin-login" element={<h1>Admin Login</h1>} />
                   <Route path="/test" element={<Test />} />
                   <Route path="/signup/:refer?" element={<Signup />} />
-                  <Route path="/myaccount" element={<MyAccount />} />
                   <Route
                     element={
                       <ProtectedRoute aspactRole={"user"} redirect={"/login"} />
@@ -161,7 +162,9 @@ const App: React.FC = () => {
                     <Route path="/messages/:refer?" element={<Messages />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/logout" element={<Logout />} />
+                    <Route path="/myaccount" element={<MyAccount />} />
                     <Route path="/password-set" element={<Password />} />
+                    <Route path="/history" element={<History />} />
                   </Route>
                   <Route
                     element={
@@ -180,10 +183,10 @@ const App: React.FC = () => {
             </div>
           </main>
         </div>
-      </div>
-
-      <div className={loading ? "loading" : "loadingStop"}>
-        <div className="loader"></div>
+        <BalancePinForm />
+        <div className={loading ? "loading" : "loadingStop"}>
+          <div className="loader"></div>
+        </div>
       </div>
     </>
   );

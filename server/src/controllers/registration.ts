@@ -6,6 +6,7 @@ import instance from "../middleware/Razorpay";
 import Temporary from "../models/Temporary";
 import User, { IUser } from "../models/UsersSchema";
 import { ObjectId } from "mongoose";
+import TempUser from "../models/TempUserSchema";
 
 dotenv.config();
 
@@ -69,9 +70,11 @@ export const registrationPost = async (req: IReq, res: Response) => {
     if (!validate?.status) {
       return res.send({ error: validate.message, success: false });
     }
-
     const Ok = validate.data;
-    console.log("OK data", Ok);
+    if (!Ok) return res.send({ error: "invalid details" });
+
+    // // console.log("OK data", { Ok });
+    // return res.send({ Ok });
 
     const amount = Ok.diamond * 1000 + Ok.golden * 500;
 
@@ -80,12 +83,12 @@ export const registrationPost = async (req: IReq, res: Response) => {
       currency: "INR",
     };
     const order = await instance.orders.create(options);
-    console.log(order);
+    console.log({ order });
 
-    const alreadyTempUser = await User.findOne({
+    const alreadyTempUser = await TempUser.findOne({
       userType: "temporary",
       $or: [
-        { contact: Ok.contact },
+        { contact: Ok.phoneNumber },
         { email: Ok.email },
         { referCode: Ok.setRefer },
       ],
@@ -95,7 +98,7 @@ export const registrationPost = async (req: IReq, res: Response) => {
       name: Ok.name,
       age: Ok.age,
       gender: Ok.gender,
-      contact: Ok.contact,
+      contact: Ok.phoneNumber,
       email: Ok.email,
       referCode: Ok.setRefer,
       transactionMethod: Ok.transactionMethod,
@@ -105,36 +108,15 @@ export const registrationPost = async (req: IReq, res: Response) => {
       autoWithdraw: Ok.autoWithdraw,
       autoRecharge: Ok.autoRecharge,
       NextInvest: Ok.NextInvest,
-      withdrawPerc: Ok.WithdrawPerc,
+      withdrawPerc: Ok.withdraw_perc,
       userType: "temporary",
 
       Priority: {
-        no_1: Ok.PriorityNo_1,
-        no_2: Ok.PriorityNo_2,
-        no_3: Ok.PriorityNo_3,
+        no_1: Ok.priority[0],
+        no_2: Ok.priority[1],
+        no_3: Ok.priority[2],
       },
-      expenses: {
-        recharge: {
-          amount: 0,
-        },
-        userSend: {
-          amount: 0,
-        },
-        withdrawOnBank: {
-          amount: 0,
-        },
-      },
-      incomes: {
-        referralAmount: {
-          amount: 0,
-        },
-        topupAmount: {
-          amount: 0,
-        },
-        userAmount: {
-          amount: 0,
-        },
-      },
+
       rechargeNum1: {
         operator: Ok.opera1,
         state: Ok.state1,
@@ -160,73 +142,52 @@ export const registrationPost = async (req: IReq, res: Response) => {
 
     let tempuser;
     if (alreadyTempUser) {
-      tempuser = await User.findByIdAndUpdate(
+      tempuser = await TempUser.findByIdAndUpdate(
         alreadyTempUser._id,
         { ...newDetails },
         { new: true }
       );
       console.log("alreadyTempUser");
     } else {
-      const newUser = new User(newDetails);
-      console.log("newUser");
+      const newUser = new TempUser(newDetails);
+      console.log("newtempUser");
       tempuser = await newUser.save();
     }
     console.log({ tempuser });
     if (!tempuser)
       return res.status(404).send({ error: "User details was wrong." });
 
-    const refer = Ok?.referId || req?.rootUser?._id;
-    let referralMoney = 0;
-    console.log("referId : ", refer);
-
-    const { diamond, golden, setRefer } = Ok;
-    if (refer) {
-      referralMoney = diamond * 20 + golden * 10;
-
-      const referralUpdate = await User.findByIdAndUpdate(
-        refer,
-        {
-          $push: {
-            "incomes.referralAmount": {
-              amount: referralMoney,
-              from: tempuser._id,
-            },
-          },
-          $inc: {
-            Balance: referralMoney,
-          },
-        },
-        { new: true }
-      );
-      console.log({ referralUpdate });
-    }
+    const { diamond, golden } = Ok;
+    const refer = Ok?.refer || req?.rootUser?.referCode;
 
     const temp = await Temporary.create({
       id: order.id,
       FunName: "register",
       diamond,
       golden,
+      amount,
       UserId: tempuser._id,
-      referCode: setRefer,
+      referralCode: refer,
     });
 
-    console.log(temp);
+    console.log({ temp });
+
+    req.session.phoneVerified = undefined;
+    req.session.phoneVerifiedTime = undefined;
+    req.session.emailVerified = undefined;
+    req.session.emailVerifiedTime = undefined;
 
     res.send({
       success: true,
       order,
       key: process.env.RAZORPAY_API_KEY,
       name: Ok.name,
-      email: Ok.emailVerified || "krabi6563@gmail.com",
-      contact: Ok.phoneVerified,
+      email: Ok.email || "krabi6563@gmail.com",
+      contact: Ok.phoneNumber,
     });
-
-    req.session.phoneVerified = undefined;
-    req.session.phoneVerifiedTime = 0;
-    req.session.emailVerified = "";
-    req.session.emailVerifiedTime = 0;
   } catch (e) {
     console.log(e);
+    res.status(502).send(e);
   }
 };
 
@@ -244,7 +205,7 @@ export const checkNumber = async (req: Request, res: Response) => {
     });
 
     console.log({ exist });
-    if (exist) return res.send({ error: "this number already!" });
+    if (exist) return res.send({ error: "this number already added!" });
     else return res.send({ success: true });
     // res.send("this number already added on " + nums + " accounts");
   } catch (e) {

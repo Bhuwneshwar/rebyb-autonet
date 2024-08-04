@@ -21,14 +21,14 @@ export interface IToken {
 declare module "express-session" {
   interface Session {
     userId?: ObjectId;
-    phoneVerified?: number;
+    phoneVerified?: string;
     phoneVerifiedTime?: number;
     emailVerified?: string;
     emailVerifiedTime?: number;
     time: number;
     otp: string;
     count: number;
-    contact: number;
+    contact: string;
     email: string;
     timeEmail: number;
     otpEmail: string;

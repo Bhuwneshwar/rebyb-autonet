@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 
 export interface Recharge {
   operator: string;
@@ -9,43 +9,54 @@ export interface Recharge {
   rechargedAt: Date;
 }
 
-interface Income {
-  amount: number;
-  time: Date;
-  from: string;
-}
+// interface IncomeDetails {
+//   referralAmount: {
+//     amount: number;
+//     golden: number;
+//     diamond: number;
+//     id: string;
+//     name: string;
+//     date: Date;
+//   }[];
+//   topUpAmount: {
+//     amount: number;
+//     date: Date;
+//   }[];
+//   userAmount: {
+//     amount: number;
+//     date: Date;
+//     id: string;
+//     name: string;
+//   }[];
+// }
 
-interface ExpenseRecharge {
-  contact: number;
-  amount: number;
-  validity: number;
-  time: Date;
-}
-
-interface ExpenseUserSend {
-  time: Date;
-  to: string;
-  from: string;
-  amount: number;
-}
-
-interface ExpenseWithdrawOnBank {
-  time: Date;
-  to: string;
-  amount: number;
-}
-
-interface IncomeDetails {
-  referralAmount: Income[];
-  topupAmount: Income[];
-  userAmount: Income[];
-}
-
-interface ExpenseDetails {
-  recharge: ExpenseRecharge[];
-  userSend: ExpenseUserSend[];
-  withdrawOnBank: ExpenseWithdrawOnBank[];
-}
+// interface ExpenseDetails {
+//   recharge: {
+//     phone: string;
+//     plan: number;
+//     validity: number;
+//     date: Date;
+//     from: string; //"balance or bank"
+//   }[];
+//   userSend: {
+//     id: string;
+//     name: string;
+//     amount: number;
+//     date: Date;
+//     from: string;
+//   }[];
+//   withdrawOnBank: {
+//     amount: number;
+//     date: Date;
+//   }[];
+//   invest: {
+//     golden: number;
+//     diamond: number;
+//     amount: number;
+//     from: string;
+//     date: Date;
+//   }[];
+// }
 
 interface UserPriority {
   no_1: string;
@@ -61,7 +72,7 @@ export interface IUser {
   profileImg?: string; // Optional property
   age: number;
   gender: string;
-  contact: number;
+  contact: string;
   email: string;
 
   autoRecharge: boolean;
@@ -76,14 +87,14 @@ export interface IUser {
   ifsc?: string; // Optional property
   bank?: string; // Optional property
 
-  password: string;
-  accessToken: string;
+  password?: string;
+  accessToken?: string;
 
-  RegisteredAt: Date;
+  // RegisteredAt: Date;
   Balance: number;
-  updatedDate: Date;
-  incomes: IncomeDetails;
-  expenses: ExpenseDetails;
+  // updatedDate: Date;
+  // incomes: IncomeDetails;
+  // expenses: ExpenseDetails;
   referCode: string;
   withdrawPerc: number;
   Priority: UserPriority;
@@ -91,14 +102,31 @@ export interface IUser {
   nextInvestCountD: number;
   nextInvestForMoney: number;
   userType: string;
+  createdAt: Date;
+  updatedAt: Date;
+  BalanceAccessPin: string;
+  BalanceAccessPinWork: {
+    amount: number;
+    reason: string;
+    ExpiredAt: Date;
+    attempt: number;
+    tempDataId: ObjectId;
+  };
+  otpWork: {
+    otp?: string;
+    otpExpiredAt?: Date;
+    attempt?: number;
+    otpValidity?: Date;
+    verifiedReason: string;
+  };
 }
 
-const userSchema = new mongoose.Schema<IUser>(
+export const userSchema = new mongoose.Schema<IUser>(
   {
     name: {
       type: String,
       required: [true, "Name is required"],
-      maxLength: [60, "Name cannot exceed 60 characters"],
+      maxLength: [20, "Name cannot exceed 20 characters"],
       minLength: [3, "Name must be at least 3 characters"],
     },
     coverImg: {
@@ -124,7 +152,7 @@ const userSchema = new mongoose.Schema<IUser>(
       enum: ["male", "female", "other"],
     },
     contact: {
-      type: Number,
+      type: String,
       unique: true,
       required: true,
       maxLength: 10,
@@ -148,13 +176,31 @@ const userSchema = new mongoose.Schema<IUser>(
       default: false,
     },
     rechargeNum1: {
-      type: mongoose.Schema.Types.Mixed, // Allow flexibility for optional recharge data
+      number: String,
+      rechargedAt: Date,
+      plan: String,
+      operator: String,
+      state: String,
+      validity: Number,
+      // Allow flexibility for optional recharge data
     },
     rechargeNum2: {
-      type: mongoose.Schema.Types.Mixed,
+      // type: mongoose.Schema.Types.Mixed,
+      number: String,
+      rechargedAt: Date,
+      plan: String,
+      operator: String,
+      state: String,
+      validity: Number,
     },
     rechargeNum3: {
-      type: mongoose.Schema.Types.Mixed,
+      // type: mongoose.Schema.Types.Mixed,
+      number: String,
+      rechargedAt: Date,
+      plan: String,
+      operator: String,
+      state: String,
+      validity: Number,
     },
 
     transactionMethod: {
@@ -173,69 +219,83 @@ const userSchema = new mongoose.Schema<IUser>(
     password: String,
     accessToken: String,
 
-    RegisteredAt: {
-      type: Date,
-      default: Date.now,
-    },
+    // RegisteredAt: {
+    //   type: Date,
+    //   default: Date.now,
+    // },
     Balance: {
       type: Number,
       default: 0,
     },
-    updatedDate: {
-      type: Date,
-      default: Date.now(),
-    },
-    incomes: {
-      referralAmount: [
-        {
-          amount: Number,
-          time: { type: Date, default: Date.now() },
-          from: String,
-        },
-      ],
-      topupAmount: [
-        {
-          amount: Number,
-          time: { type: Date, default: Date.now() },
-          from: String,
-        },
-      ],
-      userAmount: [
-        {
-          amount: Number,
-          time: { type: Date, default: Date.now() },
-          from: String,
-        },
-      ],
-    },
+    // updatedDate: {
+    //   type: Date,
+    //   default: Date.now(),
+    // },
 
-    expenses: {
-      recharge: [
-        {
-          contact: Number,
-          amount: Number,
-          validity: { type: Number, default: 0 },
-          time: { type: Date, default: Date.now() },
-        },
-      ],
-      userSend: [
-        {
-          time: { type: Date, default: Date.now() },
-          to: String,
-          from: String,
-          amount: Number,
-        },
-      ],
-      withdrawOnBank: [
-        {
-          time: { type: Date, default: Date.now() },
-          to: String,
-          amount: Number,
-        },
-      ],
-    },
+    // incomes: {
+    //   referralAmount: [
+    //     {
+    //       amount: Number,
+    //       date: Date,
+    //       golden: Number,
+    //       diamond: Number,
+    //       id: String,
+    //       name: String,
+    //     },
+    //   ],
+    //   topUpAmount: [
+    //     {
+    //       amount: Number,
+    //       date: Date,
+    //     },
+    //   ],
+    //   userAmount: [
+    //     {
+    //       amount: Number,
+    //       date: Date,
+    //       id: String,
+    //       name: String,
+    //     },
+    //   ],
+    // },
+
+    // expenses: {
+    //   recharge: [
+    //     {
+    //       phone: String,
+    //       plan: Number,
+    //       validity: Number,
+    //       date: Date,
+    //       from: String,
+    //     },
+    //   ],
+    //   userSend: [
+    //     {
+    //       date: Date,
+    //       id: String,
+    //       name: String,
+    //       amount: Number,
+    //       from: String,
+    //     },
+    //   ],
+    //   withdrawOnBank: [
+    //     {
+    //       amount: Number,
+    //       date: Date,
+    //     },
+    //   ],
+    //   invest: [
+    //     {
+    //       golden: Number,
+    //       diamond: Number,
+    //       amount: Number,
+    //       from: String,
+    //       date: Date,
+    //     },
+    //   ],
+    // },
     referCode: { type: String, unique: true, required: true },
-    withdrawPerc: { type: Number, default: 50 },
+    withdrawPerc: { type: Number, default: 100 },
     Priority: {
       no_1: { type: String, default: "recharge" },
       no_2: { type: String, default: "nextInvest" },
@@ -245,10 +305,26 @@ const userSchema = new mongoose.Schema<IUser>(
     nextInvestCountD: { type: Number, default: 0 },
     nextInvestForMoney: { type: Number, default: 0 },
     userType: { type: String, default: "permanent" },
+    BalanceAccessPin: { type: String, minlength: 6, maxlength: 6 },
+    BalanceAccessPinWork: {
+      amount: Number,
+      reason: String,
+      ExpiredAt: Date,
+      attempt: Number,
+      tempDataId: String,
+    },
+    otpWork: {
+      otp: { type: String, minlength: 6, maxlength: 6 },
+      otpExpiredAt: Date,
+      attempt: { type: Number, default: 0 },
+      otpValidity: Date,
+      verifiedReason: String,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-export default mongoose.model<IUser>("User", userSchema);
+const User = mongoose.model<IUser>("User", userSchema);
+export default User;

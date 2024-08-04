@@ -12,7 +12,8 @@ export interface AdminHomeModel extends Document {
   ifsc: string;
   bank: string;
   Amount: number;
-  timestamp: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const adminSchema: Schema<AdminHomeModel> = new Schema(
@@ -28,7 +29,7 @@ const adminSchema: Schema<AdminHomeModel> = new Schema(
     ifsc: { type: String },
     bank: { type: String },
     Amount: { type: Number, required: true },
-    timestamp: { type: Date, default: Date.now },
+    // timestamp: { type: Date, default: Date.now },
   },
   {
     timestamps: true,

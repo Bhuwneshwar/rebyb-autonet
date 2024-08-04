@@ -33,8 +33,12 @@ const UserAuthenticate = async (
       process.env.JWT_SECRET as string
     ) as IToken;
 
-    const rootUser = await User.findById(verifyToken.userId);
+    const rootUser = await User.findById(verifyToken.userId).select(
+      "-expenses -incomes"
+    );
     if (rootUser) {
+      // console.log({ rootUser });
+
       req.token = userToken;
       req.rootUser = rootUser;
       req.userId = rootUser._id; // Handle potential undefined _id

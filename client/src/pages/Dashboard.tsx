@@ -1,104 +1,84 @@
 import React, { useEffect, useState, ChangeEvent } from "react";
 import axios from "axios";
 import { useGlobalContext } from "../MyRedux";
-import { useNavigate } from "react-router-dom";
 import { formatDate } from "../utils/formatDate";
-import Loding from "../components/Loding";
 import { toast } from "react-toastify";
-import PaymentUsingRazorpay from "../utils/PaymentUsingRazorpay";
-import { IMyDetails } from "../MyRedux/Store";
+import { paymentUsingRazorpay } from "../utils/PaymentUsingRazorpay";
 import FileDownloadDoneIcon from "@mui/icons-material/FileDownloadDone";
 import AddIcon from "@mui/icons-material/Add";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-
-interface InputData {
-  sdmn: number;
-  identifyId: string;
-  topup: string;
-  withDraw: string;
-  rechargePlan: number;
-  rechNumber: string;
-  golden: number;
-  diamond: number;
-  prevPass: string;
-  currentPass: string;
-  name: string;
-  age: string;
-  gender: string;
-  email: string;
-  Identifier: string;
-  buyGoldenSelected: string;
-  buyDiamondSelected: string;
-  fromAccount: string;
-  fromAccountSendMoney: string;
-  message: string;
-  recievedId: string;
-  referCode: string;
-  amount: number;
-  mrHistoryToggle: boolean;
-}
-
-// interface Data {
-//   Balance: number;
-//   rechNums: { rechNumber: string }[];
-//   canBuyDiamond: number[];
-//   canBuyGolden: number[];
-//   lastMesssge: {
-//     referCode: string;
-//     name: string;
-//     message: string;
-//   };
-//   name: string;
-//   RegisteredAt: Date;
-//   age: number;
-//   contact: string;
-//   email: string;
-//   gender: string;
-//   _id: string;
-//   referCode: string;
-//   password?: string;
-//   redirect?: string;
-//   updated?: Data;
-// }
+import investIcon from "../assets/Investment-icon-by-back1design1-3 (1).svg";
+import { usePaymentVerify } from "../utils/usePaymentVerify";
 
 const Dashboard: React.FC = () => {
-  // const formattedDate = formatDate();
-
-  const navigate = useNavigate();
   const {
     dispatch,
-    store: { MyDetails },
+    store: { MyDetails, successResponseData },
   } = useGlobalContext();
-  console.log("newMesssge", MyDetails?.newMessage);
-  const [data, setData] = useState<IMyDetails | null>(null);
-  const [send_box, setSendBox] = useState(false);
-  const [input_data, setInputData] = useState<InputData>({
-    sdmn: 5,
-    identifyId: "",
-    topup: "10",
+  const { paymentVerify } = usePaymentVerify();
+
+  const [input_data, setInputData] = useState({
+    topUp: "10",
     withDraw: "10",
     rechargePlan: 250,
-    rechNumber: "",
+    rechargeNumber: "",
     golden: 0,
     diamond: 0,
-    prevPass: "",
-    currentPass: "",
-    name: "",
-    age: "",
-    gender: "",
-    email: "",
-    Identifier: "6205085599",
-    buyGoldenSelected: "0",
-    buyDiamondSelected: "0",
-    fromAccount: "",
-    fromAccountSendMoney: "",
-    message: "",
-    recievedId: "",
-    referCode: "",
-    amount: 0,
     mrHistoryToggle: false,
   });
+  interface IFunds {
+    diamondFunds: {
+      buyTime: Date;
+      fund: number;
+      id: number;
+      expendHistory: {
+        level1: {
+          fund: number;
+          id: number;
+        };
+        level2: {
+          fund: number;
+          id: number;
+        };
+        referral: number;
+        service: number;
+      };
+      funding: {
+        amount: number;
+        date: Date;
+        id: string;
+        upcoming: boolean;
+      }[];
+    }[];
+    goldenFunds: {
+      buyTime: Date;
+      fund: number;
+      id: number;
+      expendHistory: {
+        level1: {
+          fund: number;
+          id: number;
+        };
+        level2: {
+          fund: number;
+          id: number;
+        };
+        referral: number;
+        service: number;
+      };
+      funding: {
+        amount: number;
+        date: Date;
+        id: string;
+        upcoming: boolean;
+      }[];
+    }[];
+  }
 
+  const [funds, setFunds] = useState<IFunds>({
+    goldenFunds: [],
+    diamondFunds: [],
+  });
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -109,173 +89,158 @@ const Dashboard: React.FC = () => {
     });
   };
 
-  useEffect(() => {
-    // fetchData();
-    if (MyDetails) {
-      setData({ ...MyDetails });
-    }
-  }, [MyDetails]);
+  // const changePassword = async () => {
+  //   try {
+  //     const response = await axios.post(
+  //       "/api/v1/change-password",
+  //       { prevPass: input_data.prevPass, currentPass: input_data.currentPass },
+  //       {
+  //         withCredentials: true,
+  //       }
+  //     );
+  //     const data = response.data;
+  //     if (typeof data === "string") {
+  //       toast.info(data, {
+  //         position: "bottom-center",
+  //       });
+  //     }
+  //     console.log(data);
+  //     if (data.redirect) {
+  //       navigate(data.redirect);
+  //     }
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // };
 
-  useEffect(() => {
-    console.log(data);
-    if (data) {
-      handleChange({
-        target: { name: "referCode", value: data.referCode },
-      } as ChangeEvent<HTMLInputElement>);
-    }
-  }, [data]);
+  // const setReferCode = async () => {
+  //   try {
+  //     const response = await axios.post(
+  //       "/api/v1/account-refer",
+  //       { referCode: input_data.referCode },
+  //       {
+  //         withCredentials: true,
+  //       }
+  //     );
+  //     const data = response.data;
+  //     console.log(data);
+  //     if (data.redirect) {
+  //       navigate(data.redirect);
+  //     }
+  //     if (data.updated) {
+  //       setData(data.updated);
+  //     }
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // };
 
-  const changePassword = async () => {
+  // const genReferCode = async () => {
+  //   try {
+  //     const response = await axios.get("/api/v1/account-refer", {
+  //       withCredentials: true,
+  //     });
+  //     const data = response.data;
+  //     console.log(data);
+  //     if (data.redirect) {
+  //       navigate(data.redirect);
+  //     }
+  //     if (data.updated) {
+  //       setData(data.updated);
+  //     }
+  //     if (data.referCode) {
+  //       handleChange({
+  //         target: { name: "referCode", value: data.referCode },
+  //       } as ChangeEvent<HTMLInputElement>);
+  //     }
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // };
+
+  // const paymentVerifySendMoney = async (response: any) => {
+  //   try {
+  //     const res = await axios.post(
+  //       "/api/v1/account/payment/verification/sendMoney",
+  //       response,
+  //       {
+  //         withCredentials: true,
+  //       }
+  //     );
+  //     const data = res.data;
+  //     console.log(data);
+  //     if (data.redirect) navigate(data.redirect);
+  //     if (data.updated) {
+  //       setData(data.updated);
+  //     }
+  //   } catch (e) {
+  //     console.log("paymentVerifySendMoney error:", e);
+  //   }
+  // };
+
+  // const paymentVerify = async (response: any) => {
+  //   alert("redirecting...");
+  //   try {
+  //     const res = await axios.post(
+  //       "/api/v1/account/payment/verification",
+  //       response,
+  //       {
+  //         withCredentials: true,
+  //       }
+  //     );
+  //     const data = res.data;
+  //     console.log(data);
+  //     if (data.redirect) navigate(data.redirect);
+  //     if (data.updated) {
+  //       setData(data.updated);
+  //     }
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // };
+
+  // const paymentVerifyAddFunds = async (response: any) => {
+  //   alert("redirecting...");
+  //   try {
+  //     const res = await axios.post(
+  //       "/api/v1/account/payment/verification/add/funds",
+  //       response,
+  //       {
+  //         withCredentials: true,
+  //       }
+  //     );
+  //     const data = res.data;
+  //     console.log(data);
+  //     if (data.redirect) navigate(data.redirect);
+  //     if (data.updated) {
+  //       setData(data.updated);
+  //     }
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // };
+
+  // const topupVerify = async (response: any) => {
+  //   try {
+  //     console.log({ response });
+  //   } catch (error) {}
+  // };
+
+  const topUp = async () => {
     try {
+      dispatch("loading", true);
       const response = await axios.post(
-        "/api/v1/change-password",
-        { prevPass: input_data.prevPass, currentPass: input_data.currentPass },
+        "/api/v1/top-up",
+        { amount: +input_data.topUp },
         {
           withCredentials: true,
         }
       );
       const data = response.data;
-      if (typeof data === "string") {
-        toast.info(data, {
-          position: "bottom-center",
-        });
-      }
-      console.log(data);
-      if (data.redirect) {
-        navigate(data.redirect);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  const setReferCode = async () => {
-    try {
-      const response = await axios.post(
-        "/api/v1/account-refer",
-        { referCode: input_data.referCode },
-        {
-          withCredentials: true,
-        }
-      );
-      const data = response.data;
-      console.log(data);
-      if (data.redirect) {
-        navigate(data.redirect);
-      }
-      if (data.updated) {
-        setData(data.updated);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  const genReferCode = async () => {
-    try {
-      const response = await axios.get("/api/v1/account-refer", {
-        withCredentials: true,
-      });
-      const data = response.data;
-      console.log(data);
-      if (data.redirect) {
-        navigate(data.redirect);
-      }
-      if (data.updated) {
-        setData(data.updated);
-      }
-      if (data.referCode) {
-        handleChange({
-          target: { name: "referCode", value: data.referCode },
-        } as ChangeEvent<HTMLInputElement>);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  const paymentVerifySendMoney = async (response: any) => {
-    try {
-      const res = await axios.post(
-        "/api/v1/account/payment/verification/sendMoney",
-        response,
-        {
-          withCredentials: true,
-        }
-      );
-      const data = res.data;
-      console.log(data);
-      if (data.redirect) navigate(data.redirect);
-      if (data.updated) {
-        setData(data.updated);
-      }
-    } catch (e) {
-      console.log("paymentVerifySendMoney error:", e);
-    }
-  };
-
-  const paymentVerify = async (response: any) => {
-    alert("redirecting...");
-    try {
-      const res = await axios.post(
-        "/api/v1/account/payment/verification",
-        response,
-        {
-          withCredentials: true,
-        }
-      );
-      const data = res.data;
-      console.log(data);
-      if (data.redirect) navigate(data.redirect);
-      if (data.updated) {
-        setData(data.updated);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  const paymentVerifyAddFunds = async (response: any) => {
-    alert("redirecting...");
-    try {
-      const res = await axios.post(
-        "/api/v1/account/payment/verification/add/funds",
-        response,
-        {
-          withCredentials: true,
-        }
-      );
-      const data = res.data;
-      console.log(data);
-      if (data.redirect) navigate(data.redirect);
-      if (data.updated) {
-        setData(data.updated);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  const topupVerify = async (response: any) => {
-    try {
-      console.log({ response });
-    } catch (error) {}
-  };
-
-  const topup = async () => {
-    try {
-      const response = await axios.post(
-        "/api/v1/account-topup",
-        { amount: input_data.topup },
-        {
-          withCredentials: true,
-        }
-      );
-      const data = response.data;
-      console.log(data);
-      if (data.redirect) {
-        navigate(data.redirect);
-      }
+      console.log({ data });
+      // if (data.redirect) {
+      //   navigate(data.redirect);
+      // }
       interface Order {
         id: string;
         amount: number;
@@ -293,177 +258,341 @@ const Dashboard: React.FC = () => {
       }
       const { success, key, name, email, contact, order }: Data = data;
       if (success) {
-        PaymentUsingRazorpay({
+        paymentUsingRazorpay({
           name,
           email,
           contact,
           order,
           key,
-          callfuntion: topupVerify,
+          callBackFunction: paymentVerify,
         });
       } else {
-        console.log(data);
+        console.log({ data });
+        toast.error(data.error, { position: "bottom-center" });
       }
     } catch (e) {
       console.log(e);
+      if (axios.isAxiosError(e)) {
+        toast.error(e.message, { position: "bottom-center" });
+      } else {
+        toast.error("An unexpected error occurred", {
+          position: "bottom-center",
+        });
+      }
     }
+    dispatch("loading", false);
   };
 
   const withDraw = async () => {
     try {
+      dispatch("loading", true);
       const response = await axios.post(
-        "/api/v1/account-withdraw",
-        { amount: input_data.withDraw },
+        "/api/v1/withdraw",
+        { amount: +input_data.withDraw },
         {
           withCredentials: true,
         }
       );
       const data = response.data;
-      if (data.updated) {
-        setData(data.updated);
+      console.log({ data });
+      if (data.success) {
+        toast.success("Withdrawal request sent", { position: "bottom-center" });
       }
-      console.log(data);
+
+      if (data.error) {
+        toast.error(data.error, { position: "bottom-center" });
+      }
     } catch (e) {
       console.log(e);
+      if (axios.isAxiosError(e)) {
+        toast.error(e.message, { position: "bottom-center" });
+      } else {
+        toast.error("An unexpected error occurred", {
+          position: "bottom-center",
+        });
+      }
     }
+    dispatch("loading", false);
   };
 
-  const rechargeNow = async () => {
+  // const rechargeNow = async () => {
+  //   try {
+  //     const response = await axios.post(
+  //       "/api/v1/account-recharge",
+  //       {
+  //         contact: input_data.rechargeNumber,
+  //         rechargePlan: input_data.rechargePlan,
+  //       },
+  //       {
+  //         withCredentials: true,
+  //       }
+  //     );
+  //     const data = response.data;
+  //     console.log(data);
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // };
+
+  // const buyGolden = async () => {
+  //   try {
+  //     const response = await axios.post(
+  //       "/api/v1/account-buy-golden",
+  //       { amount: input_data.golden },
+  //       {
+  //         withCredentials: true,
+  //       }
+  //     );
+  //     const data = response.data;
+  //     const { success, key, name, email, contact, order } = data;
+  //     if (success) {
+  //       paymentUsingRazorpay({
+  //         name,
+  //         email,
+  //         contact,
+  //         order,
+  //         key,
+  //         callBackFunction: paymentVerify,
+  //       });
+  //     } else {
+  //       console.log(data);
+  //     }
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // };
+
+  // const sendMoney = async () => {
+  //   try {
+  //     const response = await axios.post(
+  //       "/api/v1/account-send-money",
+  //       {
+  //         toAccount: input_data.fromAccountSendMoney,
+  //         amount: input_data.amount,
+  //       },
+  //       {
+  //         withCredentials: true,
+  //       }
+  //     );
+  //     const data = response.data;
+  //     const { success, key, name, email, contact, order } = data;
+  //     if (success) {
+  //       paymentUsingRazorpay({
+  //         key,
+  //         name,
+  //         email,
+  //         contact,
+  //         order,
+  //         callBackFunction: paymentVerifySendMoney,
+  //       });
+  //     } else {
+  //       console.log(data);
+  //     }
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // };
+
+  const investFromBalance = async (from: string) => {
     try {
-      const response = await axios.post(
-        "/api/v1/account-recharge",
+      dispatch("loading", true);
+      const res = await axios.post(
+        `/api/v1/invest`,
         {
-          contact: input_data.rechNumber,
-          rechargePlan: input_data.rechargePlan,
+          golden: +input_data.golden,
+          diamond: +input_data.diamond,
+          from,
         },
         {
           withCredentials: true,
         }
       );
-      const data = response.data;
-      console.log(data);
-    } catch (e) {
-      console.log(e);
-    }
-  };
 
-  const buyGolden = async () => {
-    try {
-      const response = await axios.post(
-        "/api/v1/account-buy-golden",
-        { amount: input_data.golden },
-        {
-          withCredentials: true,
-        }
-      );
-      const data = response.data;
-      const { success, key, name, email, contact, order } = data;
-      if (success) {
-        PaymentUsingRazorpay({
-          name,
-          email,
-          contact,
-          order,
-          key,
-          callfuntion: paymentVerify,
-        });
-      } else {
-        console.log(data);
+      console.log({ res });
+      if (res.data.requestBalancePin) {
+        toast.warning("Please Enter your Balance PIN");
+        dispatch("balancePinModel", true);
+        dispatch("balancePinFormData", JSON.stringify(res.data));
       }
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  const sendMoney = async () => {
-    try {
-      const response = await axios.post(
-        "/api/v1/account-send-money",
-        {
-          toAccount: input_data.fromAccountSendMoney,
-          amount: input_data.amount,
-        },
-        {
-          withCredentials: true,
-        }
-      );
-      const data = response.data;
-      const { success, key, name, email, contact, order } = data;
-      if (success) {
-        PaymentUsingRazorpay({
-          key,
-          name,
-          email,
-          contact,
-          order,
-          callfuntion: paymentVerifySendMoney,
-        });
-      } else {
-        console.log(data);
+      // if (res.data.success) {
+      //   toast.success("Successfully buying the funds");
+      //   if (res.data.balance) {
+      //     // dispatch("MyDetails", { ...MyDetails, Balance: res.data.balance });
+      //   }
+      // }
+      if (res.data.error) {
+        toast.error(res.data.error, { position: "bottom-center" });
       }
-    } catch (e) {
-      console.log(e);
+    } catch (error) {
+      console.log(error);
+      if (axios.isAxiosError(error)) {
+        toast.error(error.message, { position: "bottom-center" });
+      } else {
+        toast.error("An unexpected error occurred", {
+          position: "bottom-center",
+        });
+      }
     }
+    dispatch("loading", false);
   };
 
-  const buyNow = async () => {
+  useEffect(() => {
+    if (successResponseData && MyDetails) {
+      try {
+        const objData = JSON.parse(successResponseData);
+        console.log({ objData });
+        if (objData.canBuyDiamond && objData.canBuyGolden) {
+          dispatch("MyDetails", {
+            ...MyDetails,
+            canBuyDiamond: objData.canBuyDiamond,
+            canBuyGolden: objData.canBuyGolden,
+            Balance: objData.Balance,
+          });
+          toast.success(" Purchase completed successfully");
+          // initial();
+        }
+        if (objData.type === "buy-funds-using-balance") {
+          toast.success("Funds added successfully");
+
+          // initial();
+        }
+        if (objData.type === "top-up" && objData.Balance) {
+          dispatch("MyDetails", {
+            ...MyDetails,
+            Balance: objData.Balance,
+          });
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  }, [successResponseData]);
+  const investFromAccount = async (from: string) => {
     try {
+      dispatch("loading", true);
       const { data } = await axios.post(
-        "/api/v1/account-invest",
+        "/api/v1/invest",
         {
-          golden: input_data.golden,
-          diamond: input_data.diamond,
+          golden: +input_data.golden,
+          diamond: +input_data.diamond,
+          from,
         },
         {
           withCredentials: true,
         }
       );
 
-      console.log(data);
+      console.log({ data });
 
       const { success, key, name, email, contact, order } = data;
       if (success) {
-        PaymentUsingRazorpay({
+        await paymentUsingRazorpay({
           key,
           name,
           email,
           contact,
           order,
-          callfuntion: paymentVerifyAddFunds,
+          callBackFunction: paymentVerify,
         });
-      } else {
-        console.log(data);
+      }
+      if (data.error) {
+        toast.error(data.error, { position: "bottom-center" });
       }
 
       //end
     } catch (e) {
       console.log(e);
+      if (axios.isAxiosError(e)) {
+        toast.error(e.message, { position: "bottom-center" });
+      } else {
+        toast.error("An unexpected error occurred", {
+          position: "bottom-center",
+        });
+      }
     }
+    dispatch("loading", false);
   };
 
-  return data ? (
+  // useEffect(() => {
+  //   // fetchData();
+  //   if (MyDetails) {
+  //     setData({ ...MyDetails });
+  //   }
+  // }, [MyDetails]);
+
+  // useEffect(() => {
+  //   console.log(data);
+  //   if (data) {
+  //     handleChange({
+  //       target: { name: "referCode", value: data.referCode },
+  //     } as ChangeEvent<HTMLInputElement>);
+  //   }
+  // }, [data]);
+  const initial = async () => {
+    try {
+      dispatch("loading", true);
+      const { data } = await axios.get("/api/v1/dashboard", {
+        withCredentials: true,
+      });
+      console.log("dashboard data", { data });
+
+      if (data.success) {
+        setFunds(() => ({
+          goldenFunds: data.goldenFunds,
+          diamondFunds: data.diamondFunds,
+        }));
+        toast.success("Dashboard data loaded successfully", {
+          position: "bottom-center",
+        });
+      }
+      if (data.error) {
+        toast.error(data.error, { position: "bottom-center" });
+      }
+    } catch (error: any) {
+      console.log(error);
+      if (axios.isAxiosError(error)) {
+        toast.error(error.message, { position: "bottom-center" });
+      } else {
+        toast.error("An unexpected error occurred", {
+          position: "bottom-center",
+        });
+      }
+    }
+    dispatch("loading", false);
+  };
+  useEffect(() => {
+    initial();
+  }, []);
+  // useEffect(() => {}, [MyDetails?.goldenFunds]);
+
+  return MyDetails ? (
     <>
       <div className="dashboard">
         <h1>
           {" "}
-          Welcome Mr. <span>Bhuwneshwar Mandal</span>{" "}
+          <span>Welcome {MyDetails.name}</span>{" "}
         </h1>
         <div className="d-f">
-          <div>Registration Date: {"formattedDate"}</div>
-          <div>My Balance: {50050}</div>
+          <div className="balance">
+            {" "}
+            Balance: ₹{MyDetails.Balance.toFixed(2)}
+          </div>
+          <div className="date">
+            Registration Date: {formatDate(MyDetails?.createdAt)}
+          </div>
         </div>
 
         <div className="diamond-bg">
           <h3> 💎 Diamond Funds 💎</h3>
           <div className="wtb responsive">
-            {data.diamondFunds.map((item) => (
+            {funds.diamondFunds.map((item) => (
               <div className="fund">
                 <div className="return">
                   <FileDownloadDoneIcon className="i" />
 
-                  <span> ₹:{item.fund}.00/-</span>
+                  <span> ₹{item.fund}.00</span>
 
-                  <span className="diamond-id">Diamond ID: {566}</span>
+                  <span className="diamond-id">Diamond ID: {item.id}</span>
                 </div>
 
                 <div className="date">
@@ -472,11 +601,11 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="percent">
                   <div className="info">
-                    <span className="oma"> {item.fund}/-</span>
+                    <span className="oma"> {item.fund}</span>
                     <span className="perti">
-                      {(item.fund / 2000) * 100 + "%"}
+                      {((item.fund / 2000) * 100).toFixed(2) + "%"}
                     </span>
-                    <span className="out_of">2000/- </span>
+                    <span className="out_of">2000 </span>
                   </div>
                   <div className="level-bg">
                     <div
@@ -497,7 +626,7 @@ const Dashboard: React.FC = () => {
                       Money Return History
                     </label>
                     <input
-                      onChange={(e) =>
+                      onChange={() =>
                         setInputData((prev) => ({
                           ...prev,
                           mrHistoryToggle: !input_data.mrHistoryToggle,
@@ -522,18 +651,22 @@ const Dashboard: React.FC = () => {
                     </thead>
                     <tbody>
                       {item.funding.map((fund) => (
-                        <tr className={true ? "upcoming" : ""}>
-                          <td>{fund.many}</td>
-                          <td>{formatDate(fund.when)}</td>
-                          <td>{fund._id}</td>
+                        <tr className={fund.upcoming ? "upcoming" : ""}>
+                          <td>{fund.amount}</td>
+                          <td>{formatDate(fund.date)}</td>
+                          <td>{fund.id}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
 
                   <p>
-                    Money Expend History: 500-&gt;ID:200, 250-&gt;ID:100,
-                    20-&gt;Refferal, 230-&gt;service{" "}
+                    Money Expend History: {item.expendHistory.level1.fund}
+                    -&gt;ID:{item.expendHistory.level1.id},{" "}
+                    {item.expendHistory.level2.fund}-&gt;ID:
+                    {item.expendHistory.level2.id},{" "}
+                    {item.expendHistory.referral}-&gt;Referral,
+                    {item.expendHistory.service}-&gt;service{" "}
                   </p>
                 </div>
                 <p className="note">
@@ -558,19 +691,19 @@ const Dashboard: React.FC = () => {
                   </thead>
                   <tbody>
                     <tr>
-                      <td>{data.diamondFunds.length}</td>
+                      <td>{funds.diamondFunds.length}</td>
                       <td>X</td>
                       <td>1000</td>
                       <td>=</td>
-                      <td>{data.diamondFunds.length * 1000}</td>
+                      <td>{funds.diamondFunds.length * 1000}</td>
                       <td>Invested</td>
                     </tr>
                     <tr>
-                      <td>{data.diamondFunds.length}</td>
+                      <td>{funds.diamondFunds.length}</td>
                       <td>X</td>
                       <td>2000</td>
                       <td>=</td>
-                      <td>{data.diamondFunds.length * 2000}</td>
+                      <td>{funds.diamondFunds.length * 2000}</td>
                       <td>Incoming</td>
                     </tr>
                     <tr>
@@ -579,7 +712,7 @@ const Dashboard: React.FC = () => {
                       <td>of</td>
                       <td> returned </td>
                       <td>
-                        {data.diamondFunds
+                        {funds.diamondFunds
                           .map((item) => item.fund)
                           .reduce(
                             (accumulator, currentValue) =>
@@ -595,43 +728,44 @@ const Dashboard: React.FC = () => {
                   <div className="info">
                     <span className="oma">
                       {" "}
-                      {data.diamondFunds
+                      {funds.diamondFunds
                         .map((item) => item.fund)
                         .reduce(
                           (accumulator, currentValue) =>
                             accumulator + currentValue,
                           0
                         )}
-                      /-
                     </span>
                     <span className="perti">
-                      {(data.diamondFunds
-                        .map((item) => item.fund)
-                        .reduce(
-                          (accumulator, currentValue) =>
-                            accumulator + currentValue,
-                          0
-                        ) /
-                        (data.diamondFunds.length * 2000)) *
-                        100}
+                      {(
+                        (funds.diamondFunds
+                          .map((item) => item.fund)
+                          .reduce(
+                            (accumulator, currentValue) =>
+                              accumulator + currentValue,
+                            0
+                          ) /
+                          (funds.diamondFunds.length * 2000)) *
+                        100
+                      ).toFixed(2)}
                       %
                     </span>
                     <span className="out_of">
-                      {data.diamondFunds.length * 2000}/-{" "}
+                      {funds.diamondFunds.length * 2000}{" "}
                     </span>
                   </div>
                   <div className="level-bg">
                     <div
                       style={{
                         width:
-                          (data.diamondFunds
+                          (funds.diamondFunds
                             .map((item) => item.fund)
                             .reduce(
                               (accumulator, currentValue) =>
                                 accumulator + currentValue,
                               0
                             ) /
-                            (data.diamondFunds.length * 2000)) *
+                            (funds.diamondFunds.length * 2000)) *
                             100 +
                           "%",
                       }}
@@ -645,9 +779,10 @@ const Dashboard: React.FC = () => {
               </p>
             </div>
 
-            <div className="fund-add">
+            <a href="#add-fund" className="fund-add">
               <p>
-                <span>{data.canBuyDiamond.length}</span> Add New Diamond Fund
+                <span>{MyDetails.canBuyDiamond.length}</span> Add New Diamond
+                Fund
               </p>
               <div>
                 <AddIcon className="i" />
@@ -655,21 +790,21 @@ const Dashboard: React.FC = () => {
               <p className="note">
                 <span>NOTE: </span>Total Return Amount will take av. 3 months.
               </p>
-            </div>
+            </a>
           </div>
         </div>
 
         <div className="golden-bg">
           <h3> 🥇 Golden Funds 🥇 </h3>
           <div className="wtb responsive">
-            {data.goldenFunds.map((item) => (
+            {funds.goldenFunds.map((item) => (
               <div className="fund">
                 <div className="return">
                   <FileDownloadDoneIcon className="i" />
 
-                  <span> ₹:{item.fund}.00/-</span>
+                  <span> ₹{item.fund}.00</span>
 
-                  <span className="diamond-id">Golden ID: 105</span>
+                  <span className="diamond-id">Golden ID: {item.id}</span>
                 </div>
 
                 <div className="date">
@@ -678,9 +813,11 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="percent">
                   <div className="info">
-                    <span className="oma"> {item.fund}/-</span>
-                    <span className="perti">{(item.fund / 1000) * 100}%</span>
-                    <span className="out_of">1000/- </span>
+                    <span className="oma"> {item.fund}</span>
+                    <span className="perti">
+                      {((item.fund / 1000) * 100).toFixed(2)}%
+                    </span>
+                    <span className="out_of">1000 </span>
                   </div>
                   <div className="level-bg">
                     <div
@@ -726,17 +863,21 @@ const Dashboard: React.FC = () => {
                     </thead>
                     <tbody>
                       {item.funding.map((fund) => (
-                        <tr className={true ? "upcoming" : ""}>
-                          <td>{fund.many}</td>
-                          <td>{formatDate(fund.when)}</td>
-                          <td>{fund._id}</td>
+                        <tr className={fund.upcoming ? "upcoming" : ""}>
+                          <td>{fund.amount}</td>
+                          <td>{formatDate(fund.date)}</td>
+                          <td>{fund.id}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                   <p>
-                    Money Expend History: 250-&gt;ID:200, 125-&gt;ID:100,
-                    10-&gt;Refferal, 115-&gt;service{" "}
+                    Money Expend History: {item.expendHistory.level1.fund}
+                    -&gt;ID:{item.expendHistory.level1.id},{" "}
+                    {item.expendHistory.level2.fund}-&gt;ID:
+                    {item.expendHistory.level2.id},{" "}
+                    {item.expendHistory.referral}-&gt;Referral,
+                    {item.expendHistory.service}-&gt;service{" "}
                   </p>
                 </div>
                 <p className="note">
@@ -760,19 +901,19 @@ const Dashboard: React.FC = () => {
                   </thead>
                   <tbody>
                     <tr>
-                      <td>{data.goldenFunds.length}</td>
+                      <td>{funds.goldenFunds.length}</td>
                       <td>X</td>
                       <td>500</td>
                       <td>=</td>
-                      <td>{data.goldenFunds.length * 500}</td>
+                      <td>{funds.goldenFunds.length * 500}</td>
                       <td>Invested</td>
                     </tr>
                     <tr>
-                      <td>{data.goldenFunds.length}</td>
+                      <td>{funds.goldenFunds.length}</td>
                       <td>X</td>
                       <td>1000</td>
                       <td>=</td>
-                      <td>{data.goldenFunds.length * 1000}</td>
+                      <td>{funds.goldenFunds.length * 1000}</td>
                       <td>Incoming</td>
                     </tr>
                     <tr>
@@ -781,7 +922,7 @@ const Dashboard: React.FC = () => {
                       <td>of</td>
                       <td> returned </td>
                       <td>
-                        {data.goldenFunds
+                        {funds.goldenFunds
                           .map((item) => item.fund)
                           .reduce(
                             (accumulator, currentValue) =>
@@ -797,43 +938,44 @@ const Dashboard: React.FC = () => {
                   <div className="info">
                     <span className="oma">
                       {" "}
-                      {data.goldenFunds
+                      {funds.goldenFunds
                         .map((item) => item.fund)
                         .reduce(
                           (accumulator, currentValue) =>
                             accumulator + currentValue,
                           0
                         )}
-                      /-
                     </span>
                     <span className="perti">
-                      {(data.goldenFunds
-                        .map((item) => item.fund)
-                        .reduce(
-                          (accumulator, currentValue) =>
-                            accumulator + currentValue,
-                          0
-                        ) /
-                        (data.goldenFunds.length * 1000)) *
-                        100}
+                      {(
+                        (funds.goldenFunds
+                          .map((item) => item.fund)
+                          .reduce(
+                            (accumulator, currentValue) =>
+                              accumulator + currentValue,
+                            0
+                          ) /
+                          (funds.goldenFunds.length * 1000)) *
+                        100
+                      ).toFixed(2)}
                       %
                     </span>
                     <span className="out_of">
-                      {data.goldenFunds.length * 1000}/-{" "}
+                      {funds.goldenFunds.length * 1000}{" "}
                     </span>
                   </div>
                   <div className="level-bg">
                     <div
                       style={{
                         width:
-                          (data.goldenFunds
+                          (funds.goldenFunds
                             .map((item) => item.fund)
                             .reduce(
                               (accumulator, currentValue) =>
                                 accumulator + currentValue,
                               0
                             ) /
-                            (data.goldenFunds.length * 1000)) *
+                            (funds.goldenFunds.length * 1000)) *
                             100 +
                           "%",
                       }}
@@ -846,9 +988,9 @@ const Dashboard: React.FC = () => {
                 <span>NOTE: </span>Total Return Amount will take av. 3 months.
               </p>
             </div>
-            <div className="fund-add">
+            <a href="#add-fund" className="fund-add">
               <p>
-                <span>{data.canBuyGolden.length}</span> Add New Diamond Fund
+                <span>{MyDetails.canBuyGolden.length}</span> Add New Golden Fund
               </p>
               <div>
                 <AddIcon className="i" />
@@ -856,7 +998,7 @@ const Dashboard: React.FC = () => {
               <p className="note">
                 <span>NOTE: </span>Total Return Amount will take av. 3 months.
               </p>
-            </div>
+            </a>
           </div>
         </div>
 
@@ -878,28 +1020,28 @@ const Dashboard: React.FC = () => {
               </thead>
               <tbody>
                 <tr>
-                  <td>{data.goldenFunds.length * 500}</td>
+                  <td>{funds.goldenFunds.length * 500}</td>
                   <td>
                     <AddIcon />
                   </td>
-                  <td>{data.diamondFunds.length * 1000}</td>
+                  <td>{funds.diamondFunds.length * 1000}</td>
                   <td>=</td>
                   <td>
-                    {data.goldenFunds.length * 500 +
-                      data.diamondFunds.length * 1000}
+                    {funds.goldenFunds.length * 500 +
+                      funds.diamondFunds.length * 1000}
                   </td>
                   <td>Invested</td>
                 </tr>
                 <tr>
-                  <td>{data.goldenFunds.length * 500 * 2}</td>
+                  <td>{funds.goldenFunds.length * 500 * 2}</td>
                   <td>
                     <AddIcon />
                   </td>
-                  <td>{data.diamondFunds.length * 1000 * 2}</td>
+                  <td>{funds.diamondFunds.length * 1000 * 2}</td>
                   <td>=</td>
                   <td>
-                    {data.goldenFunds.length * 500 * 2 +
-                      data.diamondFunds.length * 1000 * 2}
+                    {funds.goldenFunds.length * 500 * 2 +
+                      funds.diamondFunds.length * 1000 * 2}
                   </td>
                   <td>Incoming</td>
                 </tr>
@@ -909,14 +1051,14 @@ const Dashboard: React.FC = () => {
                   <td>of both</td>
                   <td> returned </td>
                   <td>
-                    {data.goldenFunds
+                    {funds.goldenFunds
                       .map((item) => item.fund)
                       .reduce(
                         (accumulator, currentValue) =>
                           accumulator + currentValue,
                         0
                       ) +
-                      data.diamondFunds
+                      funds.diamondFunds
                         .map((item) => item.fund)
                         .reduce(
                           (accumulator, currentValue) =>
@@ -932,67 +1074,68 @@ const Dashboard: React.FC = () => {
               <div className="info">
                 <span className="oma">
                   {" "}
-                  {data.goldenFunds
+                  {funds.goldenFunds
                     .map((item) => item.fund)
                     .reduce(
                       (accumulator, currentValue) => accumulator + currentValue,
                       0
                     ) +
-                    data.diamondFunds
+                    funds.diamondFunds
                       .map((item) => item.fund)
                       .reduce(
                         (accumulator, currentValue) =>
                           accumulator + currentValue,
                         0
                       )}
-                  /-
                 </span>
                 <span className="perti">
-                  {((data.goldenFunds
-                    .map((item) => item.fund)
-                    .reduce(
-                      (accumulator, currentValue) => accumulator + currentValue,
-                      0
-                    ) +
-                    data.diamondFunds
+                  {(
+                    ((funds.goldenFunds
                       .map((item) => item.fund)
                       .reduce(
                         (accumulator, currentValue) =>
                           accumulator + currentValue,
                         0
-                      )) /
-                    (data.goldenFunds.length * 500 * 2 +
-                      data.diamondFunds.length * 1000 * 2)) *
-                    100}
+                      ) +
+                      funds.diamondFunds
+                        .map((item) => item.fund)
+                        .reduce(
+                          (accumulator, currentValue) =>
+                            accumulator + currentValue,
+                          0
+                        )) /
+                      (funds.goldenFunds.length * 500 * 2 +
+                        funds.diamondFunds.length * 1000 * 2)) *
+                    100
+                  ).toFixed(2)}
                   %
                 </span>
                 <span className="out_of">
                   {" "}
-                  {data.goldenFunds.length * 500 * 2 +
-                    data.diamondFunds.length * 1000 * 2}
-                  /-{" "}
+                  {funds.goldenFunds.length * 500 * 2 +
+                    funds.diamondFunds.length * 1000 * 2}{" "}
                 </span>
               </div>
               <div className="level-bg">
                 <div
                   style={{
                     width:
-                      ((data.goldenFunds
+                      ((funds.goldenFunds
                         .map((item) => item.fund)
                         .reduce(
                           (accumulator, currentValue) =>
                             accumulator + currentValue,
                           0
                         ) +
-                        data.diamondFunds
+                        funds.diamondFunds
                           .map((item) => item.fund)
                           .reduce(
                             (accumulator, currentValue) =>
                               accumulator + currentValue,
                             0
                           )) /
-                        (data.goldenFunds.length * 500 * 2 +
-                          data.diamondFunds.length * 1000 * 2)) *
+                        (funds.goldenFunds.length * 500 * 2 +
+                          funds.diamondFunds.length * 1000 * 2)) *
                         100 +
                       "%",
                   }}
@@ -1005,7 +1148,65 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
         </div>
-
+        <div id="add-fund" className="choose-fund">
+          <h2>Choose Funds</h2>
+          <div className="notes">
+            <div className="diamond note">
+              <label htmlFor="diamond">Diamond : </label>
+              <select
+                name="diamond"
+                id="diamond"
+                value={input_data.diamond}
+                onChange={handleChange}
+              >
+                <option value="0">0</option>
+                {MyDetails.canBuyDiamond.map((v, i) => {
+                  return <option value={v}>{v + " X"}</option>;
+                })}
+              </select>
+              <p>
+                Invest: {input_data.diamond * 1000}; Return:{" "}
+                {input_data.diamond * 2000} in under 3 months
+              </p>
+            </div>
+            <div className="golden note">
+              <label htmlFor="golden">Golden : </label>
+              <select
+                name="golden"
+                id="golden"
+                value={input_data.golden}
+                onChange={handleChange}
+              >
+                <option value="0">0</option>
+                {MyDetails.canBuyGolden.map((v, i) => {
+                  return <option value={v}>{v + " X"}</option>;
+                })}
+              </select>
+              <p>
+                Invest: {input_data.golden * 500}; Return:{" "}
+                {input_data.golden * 1000} in under 3 months
+              </p>
+            </div>
+          </div>
+          <p>
+            Total Invest: {input_data.diamond * 1000 + input_data.golden * 500}{" "}
+            Return: {input_data.golden * 1000 + input_data.diamond * 2000} in
+            under 3 months
+          </p>
+          <div className="btn">
+            <div className="total-amount">
+              <img src={investIcon} alt="icon" />
+              Investable Amount{" "}
+              {input_data.diamond * 1000 + input_data.golden * 500}
+            </div>
+            <button onClick={() => investFromBalance("balance")}>
+              Invest From Balance
+            </button>
+            <button onClick={() => investFromAccount("account")}>
+              Invest From Account
+            </button>
+          </div>
+        </div>
         {/* <div className="btns">
           <button onClick={(e) => navigate("/signup")}> Add New User</button>
         </div> */}
@@ -1027,12 +1228,12 @@ const Dashboard: React.FC = () => {
               type="number"
               placeholder="Amount..."
               onChange={handleChange}
-              name="topup"
+              name="topUp"
               id=""
-              value={input_data.topup}
+              value={input_data.topUp}
             />
             <br />
-            <button onClick={topup}>TopUp</button>
+            <button onClick={topUp}>TopUp</button>
           </div>
           <div className="border-label">
             <span>Withdraw on Bank</span>
@@ -1052,7 +1253,7 @@ const Dashboard: React.FC = () => {
             <div className="d-g">
               <select
                 onChange={handleChange}
-                value={input_data.rechNumber}
+                value={input_data.rechargeNumber}
                 name="rechNumber"
                 id="rechargeNums"
               >
@@ -1071,239 +1272,10 @@ const Dashboard: React.FC = () => {
             <button>Recharge Now</button>
           </div>
         </div>
-
-        <div className="choose-fund">
-          <h2>Choose Funds</h2>
-          <div className="notes">
-            <div className="diamond note">
-              <label htmlFor="diamond">Diamond : </label>
-              <select
-                name="diamond"
-                id="diamond"
-                value={input_data.diamond}
-                onChange={handleChange}
-              >
-                <option value="0">0</option>
-                {data.canBuyDiamond.map((v, i) => {
-                  return <option value={v}>{v + " X"}</option>;
-                })}
-              </select>
-              <p>
-                Invest: {input_data.diamond * 1000}; Return:{" "}
-                {input_data.diamond * 2000} in under 3 months
-              </p>
-            </div>
-            <div className="golden note">
-              <label htmlFor="golden">Golden : </label>
-              <select
-                name="golden"
-                id="golden"
-                value={input_data.golden}
-                onChange={handleChange}
-              >
-                <option value="0">0</option>
-                {data.canBuyGolden.map((v, i) => {
-                  return <option value={v}>{v + " X"}</option>;
-                })}
-              </select>
-              <p>
-                Invest: {input_data.golden * 500}; Return:{" "}
-                {input_data.golden * 1000} in under 3 months
-              </p>
-            </div>
-          </div>
-          <p>
-            Total Invest: {input_data.diamond * 1000 + input_data.golden * 500}{" "}
-            Return: {input_data.golden * 1000 + input_data.diamond * 2000} in
-            under 3 months
-          </p>
-          <div className="btn">
-            <button>
-              Invest {input_data.diamond * 1000 + input_data.golden * 500}
-            </button>
-          </div>
-        </div>
-        <div className="msg">
-          <div className="msgs" onClick={(e) => navigate("/messages/")}>
-            Messages <span>9</span>
-          </div>
-          <div>Last Message</div>
-          <div
-            className="lastMessage"
-            onClick={(e) => navigate("/messages/" + data.lastMesssge.referCode)}
-          >
-            <figure>
-              <img
-                src="https://th.bing.com/th/id/OIP.vAuCou6PorBYkntC17e0QAAAAA?rs=1&pid=ImgDetMain"
-                alt="user pic"
-              />
-            </figure>
-            <div className="info">
-              <h3>{"Bikram Kumar"}</h3>
-              <span>{"hi Dada"} </span>
-            </div>
-            <div className="time">
-              <div>12:00 AM</div>
-              <span>10</span>
-            </div>
-          </div>
-        </div>
-        {/* 
-          <div>{data.name}</div>
-          <div>{data.Balance}</div>
-          <div>{data.RegisteredAt}</div>
-          <div>{data.age}</div>
-          <div>{data.contact}</div>
-          <div>{data.email}</div>
-          <div>{data.gender}</div>
-          <div>{data._id}</div>
-          <div
-            onClick={(e) => navigate("/messages/" + data.lastMesssge.referCode)}
-          >
-            <h3>{data.lastMesssge.name}</h3>
-            <h4>{data.lastMesssge.message} </h4>
-          </div>
-          <div className="newMesssge">{newMessage}</div>
-
-          <button onClick={(e) => navigate("/signup")}>Add New User</button>
-          <div className={send_box ? "send_box" : ""}>
-            <h5>Available Balance : {data.Balance}</h5>
-
-            <br />
-            <input
-              onChange={handleChange}
-              name="topup"
-              id=""
-              value={input_data.topup}
-            />
-            <button onClick={topup}>TopUp</button>
-            <br />
-            <br />
-            <input
-              onChange={handleChange}
-              name="withDraw"
-              placeholder="Enter Amount "
-              id=""
-              value={input_data.withDraw}
-            />
-            <button onClick={withDraw}>Withdraw</button>
-            <br />
-            <br />
-            <select
-              onChange={handleChange}
-              value={input_data.rechNumber}
-              name="rechNumber"
-              id="rechargeNums"
-            >
-              <option value="0">select contact</option>
-              {data.rechNums.map((ob, i) => {
-                return (
-                  <option key={i} value={ob.rechNumber}>
-                    {ob.rechNumber}
-                  </option>
-                );
-              })}
-            </select>
-            <input
-              name="rechargePlan"
-              onChange={handleChange}
-              id=""
-              value={input_data.rechargePlan}
-            />
-            <button onClick={rechargeNow}>Recharge Now</button>
-            <br />
-            <br />
-            <select
-              name="golden"
-              value={input_data.golden}
-              onChange={handleChange}
-              id=""
-            >
-              <option value="0">Select Golden fund</option>
-              {data.canBuyGolden.map((v, i) => {
-                return <option value={v}>{v + " X"}</option>;
-              })}
-            </select>
-            <select
-              value={input_data.diamond}
-              name="diamond"
-              onChange={handleChange}
-              id=""
-            >
-              <option value="0">Select Diamond fund</option>
-              {data.canBuyDiamond.map((v, i) => {
-                return <option value={v}>{v + " X"}</option>;
-              })}
-            </select>
-            <button onClick={buyNow}>
-              Buy : {input_data.diamond * 1000 + input_data.golden * 500}
-            </button>
-            <br />
-
-            <br />
-            <h3 onClick={(e) => navigate("/messages")}>
-              Messages <span></span>
-            </h3>
-            <br />
-            <br />
-            {data.password ? (
-              <>
-                <input
-                  name="prevPass"
-                  id=""
-                  onChange={handleChange}
-                  value={input_data.prevPass}
-                  placeholder="Enter previous Password"
-                />
-                <input
-                  name="currentPass"
-                  id=""
-                  onChange={handleChange}
-                  value={input_data.currentPass}
-                  placeholder="New Password"
-                />
-              </>
-            ) : (
-              <input
-                name="currentPass"
-                id=""
-                onChange={handleChange}
-                value={input_data.currentPass}
-                placeholder="New Password"
-              />
-            )}
-            <button onClick={changePassword}>
-              {data.password ? "Change Password" : "Set password"}
-            </button>
-            <br />
-            <br />
-            <div id="updateBox">
-              <h2>Account Update</h2>
-              <input
-                name="name"
-                id=""
-                onChange={handleChange}
-                value={data.name}
-                placeholder="Name"
-              />
-
-              <br />
-              <br />
-              <h3>Set Refer Code</h3>
-              <input
-                onChange={handleChange}
-                name="referCode"
-                id=""
-                value={input_data.referCode}
-              />
-              <button onClick={genReferCode}> Generate Refer Code</button>
-              <button onClick={setReferCode}> Set Refer Code</button>
-            </div>
-          </div> */}
       </div>
     </>
   ) : (
-    <Loding />
+    ""
   );
 };
 

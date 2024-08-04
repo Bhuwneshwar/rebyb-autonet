@@ -4,8 +4,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useGlobalContext } from "../MyRedux";
 import Chat from "./Chat";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-import PaymentUsingRazorpay from "../utils/PaymentUsingRazorpay";
+import { paymentUsingRazorpay } from "../utils/PaymentUsingRazorpay";
 import { toast } from "react-toastify";
+import { formatDate } from "../utils/formatDate";
 
 interface UserMessages {
   name: string;
@@ -37,7 +38,14 @@ interface InputData {
   Identifier?: string;
   identifyId: string;
 }
-
+interface IUserList {
+  name: string;
+  referCode: string;
+  profileImg: string;
+  unreadMsg: string;
+  lastMsgTime: Date;
+  unreadMsgCount: number;
+}
 const Messages: React.FC = () => {
   const [isLongClick, setIsLongClick] = useState(false);
   let timeoutId: NodeJS.Timeout;
@@ -75,7 +83,8 @@ const Messages: React.FC = () => {
     allMessages: [],
   });
 
-  const [allMessage, setAllMessage] = useState<any[]>([]);
+  const [allMessages, setAllMessages] = useState<IUserList[]>([]);
+  console.log({ allMessages });
 
   const [canBuy, setCanBuy] = useState<CanBuy>({
     buyGolden: [],
@@ -114,13 +123,13 @@ const Messages: React.FC = () => {
     });
   };
 
-  // useEffect(() => {
-  //   initial();
-  // }, []);
+  useEffect(() => {
+    initial();
+  }, []);
 
   useEffect(() => {
-    if (refer) initialMessage();
-    else initial();
+    // initial();
+    // if (refer) initialMessage();
   }, [refer]);
 
   useEffect(() => {
@@ -143,6 +152,31 @@ const Messages: React.FC = () => {
 
   const selectMessages = async (e: any) => {
     console.log(e.target);
+  };
+
+  const initial = async () => {
+    try {
+      dispatch("loading", true);
+      const { data } = await axios.get(`/api/v1/messages`, {
+        withCredentials: true,
+      });
+      console.log({ data });
+
+      if (data.success) {
+        setAllMessages(data.usersList);
+      }
+      if (data.error) {
+        toast.error(data.error, {
+          position: "bottom-center",
+        });
+      }
+    } catch (e) {
+      console.log("initial error :", e);
+      toast.error("Failed to fetch messages", {
+        position: "bottom-center",
+      });
+    }
+    dispatch("loading", false);
   };
 
   const initialMessage = async () => {
@@ -177,24 +211,24 @@ const Messages: React.FC = () => {
     }
   };
 
-  const initial = async () => {
+  const join = async () => {
     try {
-      dispatch("loading", true);
-      const { data } = await axios.get(`/api/v1/messages`, {
-        withCredentials: true,
-      });
+      const { data } = await axios.post(
+        `/api/v1/message/join`,
+        {
+          user: input_data.identifyId,
+        },
+        {
+          withCredentials: true,
+        }
+      );
       console.log({ data });
-
-      if (data.success) {
-        setAllMessage(data.messages);
+      if (data.referCode) {
+        navigate("/messages/" + data.referCode);
       }
     } catch (e) {
-      console.log("initial error :", e);
-      toast.error("Failed to fetch messages", {
-        position: "bottom-center",
-      });
+      console.log("checkFunds error :", e);
     }
-    dispatch("loading", false);
   };
 
   const sendMessage = async (req?: string) => {
@@ -217,9 +251,10 @@ const Messages: React.FC = () => {
           buyFundForUser: true,
         });
       } else {
-        msg = input_data.message;
+        msg = MyDetails?.newMessage;
       }
       alert(msg);
+      dispatch("loading", true);
       const { data } = await axios.post(
         `/api/v1/message-send`,
         {
@@ -231,29 +266,15 @@ const Messages: React.FC = () => {
         }
       );
       console.log({ data });
-    } catch (e) {
-      console.log("checkFunds error :", e);
-    }
-  };
-
-  const join = async () => {
-    try {
-      const { data } = await axios.post(
-        `/api/v1/message/join`,
-        {
-          user: input_data.identifyId,
-        },
-        {
-          withCredentials: true,
-        }
-      );
-      console.log({ data });
-      if (data.referCode) {
-        navigate("/messages/" + data.referCode);
+      if (data.success) {
       }
-    } catch (e) {
+      if (data.error) {
+      }
+    } catch (e: any) {
       console.log("checkFunds error :", e);
+      toast.error(e.message, { position: "bottom-center" });
     }
+    dispatch("loading", false);
   };
 
   const sendMoney = async () => {
@@ -284,7 +305,7 @@ const Messages: React.FC = () => {
       }
       const { payNow, key, name, email, contact, order } = data;
       if (payNow) {
-        PaymentUsingRazorpay({
+        paymentUsingRazorpay({
           key,
           name,
           email,
@@ -348,7 +369,7 @@ const Messages: React.FC = () => {
       }
       const { FunName, success, key, name, email, contact, order } = data;
       if (success) {
-        PaymentUsingRazorpay({
+        paymentUsingRazorpay({
           key,
           name,
           email,
@@ -398,23 +419,7 @@ const Messages: React.FC = () => {
     });
   };
 
-  return refer && MyDetails ? (
-    <Chat
-      userMessages={userMessages}
-      Balance={MyDetails.Balance}
-      newMessage={MyDetails.newMessage}
-      canBuy={canBuy}
-      canBuyOthers={canBuyOthers}
-      sendMoney={sendMoney}
-      buyForother={buyForother}
-      handleMouseDown={handleMouseDown}
-      handleMouseUp={handleMouseUp}
-      refer={refer}
-      handleChange={handleChange}
-      input_data={input_data}
-      sendMessage={sendMessage}
-    />
-  ) : (
+  return (
     <div id="messages">
       <div className="container">
         <h2>Messages</h2>
@@ -424,6 +429,9 @@ const Messages: React.FC = () => {
             value={input_data.identifyId}
             type="text"
             name="identifyId"
+            onKeyUp={(event) => {
+              if (event.key === "Enter") join();
+            }}
             placeholder="Refer Code/ID/Phone Number/Email"
           />
           <button onClick={join}>
@@ -431,7 +439,7 @@ const Messages: React.FC = () => {
           </button>
         </div>
         <div className="chats">
-          {allMessage.map((user) => (
+          {allMessages.map((user) => (
             <div
               className="lastMessage"
               key={user.referCode}
@@ -439,22 +447,42 @@ const Messages: React.FC = () => {
             >
               <figure>
                 <img
-                  src="https://th.bing.com/th/id/OIP.vAuCou6PorBYkntC17e0QAAAAA?rs=1&pid=ImgDetMain"
+                  // src="https://th.bing.com/th/id/OIP.vAuCou6PorBYkntC17e0QAAAAA?rs=1&pid=ImgDetMain"
+                  src={user.profileImg}
                   alt={user.name}
                 />
               </figure>
               <div className="info">
                 <h3>{user.name}</h3>
-                <span>{"static msg"} </span>
+                <span>{user.unreadMsg} </span>
               </div>
               <div className="time">
-                <div>12:00 AM</div>
-                <span>10</span>
+                <div>{formatDate(user.lastMsgTime)}</div>
+                <span>{user.unreadMsgCount}</span>
               </div>
             </div>
           ))}
         </div>
       </div>
+      {refer && MyDetails ? (
+        <Chat
+          userMessages={userMessages}
+          Balance={MyDetails.Balance}
+          newMessage={MyDetails.newMessage}
+          canBuy={canBuy}
+          canBuyOthers={canBuyOthers}
+          sendMoney={sendMoney}
+          buyForother={buyForother}
+          handleMouseDown={handleMouseDown}
+          handleMouseUp={handleMouseUp}
+          refer={refer}
+          handleChange={handleChange}
+          input_data={input_data}
+          sendMessage={sendMessage}
+        />
+      ) : (
+        ""
+      )}
     </div>
   );
 };

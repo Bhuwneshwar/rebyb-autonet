@@ -2,9 +2,11 @@ import { useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useGlobalContext } from "../MyRedux";
 
 const Logout = () => {
   const navigate = useNavigate();
+  const { dispatch } = useGlobalContext();
 
   useEffect(() => {
     fetchData();
@@ -24,19 +26,20 @@ const Logout = () => {
       }
 
       // Logout request to the server
-      const res = await axios.get("/api/logout", {
+      const res = await axios.get("/api/v1/logout", {
         withCredentials: true,
       });
 
-      console.log(res);
+      console.log({ res });
       if (typeof res.data === "string") {
         toast.info(res.data, {
           position: "bottom-center",
         });
+        dispatch("MyDetails", undefined);
       }
-      if (res.data.redirect) {
-        navigate(res.data.redirect);
-      }
+      // if (res.data.redirect) {
+      //   navigate(res.data.redirect);
+      // }
     } catch (e) {
       console.log(e);
     }

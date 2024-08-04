@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 // import { AutoRegistration } from "../controllers/forMockData/AutoRegistration";
-// import { ResetFunds } from "../controllers/forMockData/resetFunds";
+import ResetFunds from "../controllers/forMockData/resetFunds";
 
 dotenv.config();
 
@@ -13,7 +13,7 @@ const connectDB = async (): Promise<boolean> => {
     });
 
     console.log(`Mongodb connected with server: ${data.connection.host}`);
-
+    // ResetFunds();
     return true;
   } catch (e) {
     console.log("No Internet Connection : \n" + e);

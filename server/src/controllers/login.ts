@@ -104,7 +104,11 @@ const loginPost = async (req: IReq, res: Response) => {
 const loginSendOtp = async (req: Request, res: Response) => {
   try {
     const { identifyId }: { identifyId: string } = req.body;
-    console.log("loginSendOtp");
+
+    if (typeof identifyId !== "string")
+      return res.send({ error: "Invalid identifyId!" });
+    if (identifyId === "")
+      return res.send({ error: "please fill out the identifyId!" });
 
     const identified = await identificationService(identifyId);
     if (identified.error) return res.send(identified);
