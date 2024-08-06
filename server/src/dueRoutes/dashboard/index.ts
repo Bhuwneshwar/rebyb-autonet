@@ -3,6 +3,7 @@ import UserAuthenticate from "../../middleware/UserAuthenticate";
 import { IReq } from "../../types";
 import GoldenFund from "../../models/goldenSchema";
 import DiamondFund from "../../models/diamondSchema";
+import material from "../../utils/Materials.json";
 
 const dashboard = async (req: IReq, res: Response) => {
   try {
@@ -195,6 +196,7 @@ const dashboard = async (req: IReq, res: Response) => {
       success: true,
       diamondFunds: diamondFunds2,
       goldenFunds: goldenFunds2,
+      RechargePlans: material.RechargePlans,
     });
   } catch (error) {
     console.log(error);

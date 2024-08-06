@@ -72,21 +72,24 @@ const register = async (
         console.log({ referralUpdate });
 
         const savedHistory = await History.create({
-          incomes: {
-            referralAmount: [
-              {
-                id: newUser._id,
-                diamond,
-                golden,
-                amount: referralMoney,
-                date: new Date(),
-                name: newUser.name,
-                userId: referralUpdate?._id,
-              },
-            ],
-          },
+          // incomes: {
+          //   referralAmount: [
+          //     {
+          id: newUser._id,
+          diamond,
+          golden,
+          amount: referralMoney,
+          date: new Date(),
+          name: newUser.name,
+          userId: referralUpdate?._id,
+          category: "income",
+          subcategory: "referralAmount",
+          //   },
+          // ],
+          // },
           // other fields initialization
         });
+        console.log({ savedHistory });
       }
 
       if (accessToken) {

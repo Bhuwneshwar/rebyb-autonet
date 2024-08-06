@@ -30,7 +30,7 @@ const makeArray = (fund: number) => {
   return opt;
 };
 
-export const registration = async (req: Request, res: Response) => {
+const registration = async (req: Request, res: Response) => {
   let userExist = true;
   let referCode: string | undefined;
 
@@ -61,7 +61,7 @@ interface IReq extends Request {
   rootUser?: IUser;
   userId?: ObjectId;
 }
-export const registrationPost = async (req: IReq, res: Response) => {
+const registrationPost = async (req: IReq, res: Response) => {
   try {
     console.log(req.body);
     console.log("session: data", { ...req.session });
@@ -191,7 +191,7 @@ export const registrationPost = async (req: IReq, res: Response) => {
   }
 };
 
-export const checkNumber = async (req: Request, res: Response) => {
+const checkNumber = async (req: Request, res: Response) => {
   try {
     const { mob } = req.query;
     console.log(mob);
@@ -214,4 +214,4 @@ export const checkNumber = async (req: Request, res: Response) => {
   }
 };
 
-export default { registration, registrationPost, checkNumber };
+export { registration, registrationPost, checkNumber };

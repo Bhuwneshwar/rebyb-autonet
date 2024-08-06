@@ -9,6 +9,7 @@ import HouseRoundedIcon from "@mui/icons-material/HouseRounded";
 import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
 import { Link } from "react-router-dom";
 // import { useEffect } from "react";
+import SwapVertIcon from "@mui/icons-material/SwapVert";
 import HistoryRounded from "@mui/icons-material/HistoryRounded";
 import { makeProfilePic } from "../utils/functions";
 import { useGlobalContext } from "../MyRedux";
@@ -45,7 +46,7 @@ const HeaderContent: React.FC = () => {
             className={location.pathname.includes("/history") ? "active" : ""}
             to={"/history"}
           >
-            <HistoryRounded />
+            <SwapVertIcon />
           </Link>
           <Link
             className={location.pathname.includes("/messages") ? "active" : ""}

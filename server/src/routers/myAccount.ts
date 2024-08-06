@@ -32,8 +32,8 @@ const myAccountRoute = express.Router();
 // myAccountRoute.route("/change-password").post(UserAuthenticate, changePassword);
 // myAccountRoute.route("/set-password").post(UserAuthenticate, setPassword);
 myAccountRoute.route("/account-send-money").post(UserAuthenticate, sendMoney);
-myAccountRoute.route("/account-recharge").post(UserAuthenticate, recharge);
 //
+myAccountRoute.route("/recharge").post(UserAuthenticate, recharge);
 myAccountRoute.route("/withdraw").post(UserAuthenticate, withdraw);
 myAccountRoute.route("/top-up").post(UserAuthenticate, topUp);
 myAccountRoute.route("/invest").post(UserAuthenticate, invest);

@@ -4,6 +4,7 @@ import axios from "axios";
 import { useGlobalContext } from "../MyRedux";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
+import { IMyDetails } from "../MyRedux/Store";
 const Login = () => {
   const {
     dispatch,
@@ -20,12 +21,45 @@ const Login = () => {
     otp: "",
     password: "",
   });
+  const getUserData = async () => {
+    try {
+      dispatch("loading", true);
+      dispatch("nav", false);
+      const { data } = await axios.get("/api/v1/myaccount", {
+        withCredentials: true,
+      });
 
-  const onSuccess = () => {
-    if (url) {
-      navigate(url);
-    } else {
-      // navigate("/dashboard");
+      console.log({ data });
+      if (data.success) {
+        const user: IMyDetails = data.user;
+
+        dispatch("MyDetails", { ...MyDetails, ...user });
+      }
+      if (data.error) {
+        toast.error(data.error, {
+          position: "bottom-center",
+        });
+      }
+    } catch (error: any) {
+      console.log("Error getting user data", error);
+      toast.error(error.message, {
+        position: "bottom-center",
+      });
+    }
+    dispatch("loading", false);
+  };
+  const onSuccess = async () => {
+    try {
+      await getUserData();
+      console.log("onSuccess");
+
+      if (url) {
+        navigate(url);
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -110,12 +144,13 @@ const Login = () => {
       console.log({ data });
 
       if (data.success) {
-        dispatch("MyDetails", { ...MyDetails, ...data.myDetails });
+        // dispatch("MyDetails", { ...MyDetails, ...data.myDetails });
         toast.success("Login successfully!", {
           position: "bottom-center",
         });
-        navigate("/dashboard");
-        dispatch("role", "user");
+        onSuccess();
+        // navigate("/dashboard");
+        // dispatch("role", "user");
       }
       if (data.error) {
         toast.error(data.error, {
@@ -137,13 +172,13 @@ const Login = () => {
       console.log({ data });
 
       if (data.success) {
-        dispatch("MyDetails", { ...MyDetails, ...data.myDetails });
+        // dispatch("MyDetails", { ...MyDetails, ...data.myDetails });
         toast.success("Login successfully!", {
           position: "bottom-center",
         });
         // navigate("/dashboard");
-        // onSuccess();
-        dispatch("role", "user");
+        onSuccess();
+        // dispatch("role", "user");
       }
       if (data.error) {
         toast.error(data.error, {
@@ -158,9 +193,9 @@ const Login = () => {
     }
     dispatch("loading", false);
   };
-  useEffect(() => {
-    if (MyDetails) onSuccess();
-  }, [MyDetails]);
+  // useEffect(() => {
+  //   if (MyDetails) onSuccess();
+  // }, [MyDetails]);
   return (
     <div className="login-form">
       <form onSubmit={(e) => e.preventDefault()}>

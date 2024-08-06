@@ -46,7 +46,7 @@ interface Details {
   SelectedPlan3: string;
 }
 
-interface IPlan {
+export interface IPlan {
   price: number;
   validity: number;
   data: string;
@@ -359,6 +359,7 @@ const Signup = () => {
   useEffect(() => {
     checkNum3();
   }, [details.rechNum3]);
+
   const selectPlan = (opera: string) => {
     if (opera === "jio") {
       return data?.RechargePlans.jio || [];

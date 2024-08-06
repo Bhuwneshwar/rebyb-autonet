@@ -5,6 +5,9 @@ import Admin from "../../models/AdminSchema";
 import AdminHome from "../../models/AdminHome";
 import Temp from "../../models/Temporary";
 import Messages from "../../models/messages";
+import TempUser from "../../models/TempUserSchema";
+import PaymentHistory from "../../models/paymentSuccessSchema";
+import History from "../../models/historySchema";
 
 const ResetFunds = async (): Promise<boolean> => {
   try {
@@ -15,6 +18,9 @@ const ResetFunds = async (): Promise<boolean> => {
     const deletedAdminHome = await AdminHome.deleteMany();
     const temp = await Temp.deleteMany();
     const msg = await Messages.deleteMany();
+    const tempUser = await TempUser.deleteMany();
+    const payment = await PaymentHistory.deleteMany();
+    const history = await History.deleteMany();
 
     if (deletedGoldenFund && deletedDiamondFund) {
       console.log("All records have been deleted");
@@ -45,9 +51,9 @@ const ResetFunds = async (): Promise<boolean> => {
         userId: savedUser._id,
         fund: 0,
         reserveFund: 500,
-        orderId: "orderidsample",
-        paymentId: "paymentidsample",
-        signature: "validsignature",
+        // orderId: "orderidsample",
+        // paymentId: "paymentidsample",
+        // signature: "validsignature",
       });
       const savedGoldenFund = await newGoldenFund.save();
       console.log("Saved Golden Fund:", savedGoldenFund);
@@ -57,9 +63,9 @@ const ResetFunds = async (): Promise<boolean> => {
         userId: savedUser._id,
         fund: 0,
         reserveFund: 1000,
-        orderId: "orderidsample",
-        paymentId: "paymentidsample",
-        signature: "validsignature",
+        // orderId: "orderidsample",
+        // paymentId: "paymentidsample",
+        // signature: "validsignature",
       });
       const savedDiamondFund = await newDiamondFund.save();
       console.log("Saved Diamond Fund:", savedDiamondFund);

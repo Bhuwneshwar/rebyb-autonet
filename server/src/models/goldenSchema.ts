@@ -6,9 +6,9 @@ export interface GoldenFundModel extends Document {
   userId: string;
   fund: number;
   reserveFund: number;
-  orderId: string;
-  paymentId: string;
-  signature: string;
+  // orderId: string;
+  // paymentId: string;
+  // signature: string;
   fundReturnHistory: Array<{ many: number; when: Date; who: number }>;
   createdAt: Date;
   updatedAt: Date;
@@ -20,9 +20,9 @@ const goldenSchema: Schema<GoldenFundModel> = new Schema(
     userId: { type: String, required: true },
     fund: { type: Number, default: 0 },
     reserveFund: { type: Number, default: 0 },
-    orderId: { type: String, required: true },
-    paymentId: { type: String, required: true },
-    signature: { type: String, required: true },
+    // orderId: { type: String, required: true },
+    // paymentId: { type: String, required: true },
+    // signature: { type: String, required: true },
     fundReturnHistory: [
       {
         many: { type: Number, required: true },

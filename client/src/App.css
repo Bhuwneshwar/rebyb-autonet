@@ -1706,10 +1706,14 @@ button {
     }
   }
   .d-f {
-    /* display: flex;
+    display: flex;
     text-align: center;
     align-items: center;
-    justify-content: center; */
+    justify-content: center;
+    gap: 1rem;
+  }
+  .front {
+    gap: 1rem;
     .date {
       font-size: 1rem;
       color: var(--primary);

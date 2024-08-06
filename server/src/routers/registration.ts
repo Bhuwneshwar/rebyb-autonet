@@ -2,9 +2,9 @@ import express from "express";
 const router = express.Router();
 
 import {
+  checkNumber,
   registration,
   registrationPost,
-  checkNumber,
 } from "../controllers/registration"; // Assuming controllers export functions
 import paymentVerification from "../middleware/payment";
 import UserAuthenticate from "../middleware/UserAuthenticate";

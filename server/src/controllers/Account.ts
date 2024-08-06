@@ -12,7 +12,9 @@ import dotenv from "dotenv";
 import { IReq } from "../types";
 import Temporary from "../models/Temporary";
 import { ObjectId } from "mongoose";
-
+import Transaction from "../models/historySchema";
+import AdminHome from "../models/AdminHome";
+import materials from "../utils/Materials.json";
 dotenv.config();
 
 const buyAutoNet = async (req: IReq, res: Response) => {
@@ -162,6 +164,16 @@ const topUpComplete = async (
       { new: true }
     );
 
+    const trans = await Transaction.create({
+      category: "income",
+      subcategory: "topUp",
+      amount,
+      userId,
+      date: new Date(),
+      from: "account",
+    });
+    console.log({ trans });
+
     res.send({ success: true, Balance: updatedDoc?.Balance, type: "top-up" });
     console.log("Top-up successful");
   } catch (error) {
@@ -275,7 +287,10 @@ const withdraw = async (req: IReq, res: Response) => {
 
     console.log(req.body);
 
-    const { amount }: { amount: number } = req.body;
+    const {
+      amount,
+      transactionMethod,
+    }: { amount: number; transactionMethod: string } = req.body;
 
     if (typeof amount !== "number")
       return res.json({ error: "Amount must be a number" });
@@ -284,8 +299,58 @@ const withdraw = async (req: IReq, res: Response) => {
       return res.json({ error: "Amount should be greater than zero" });
 
     if (req.rootUser.Balance < amount)
-      return res.json("Low balance to " + amount);
+      return res.json({ error: "Low balance to " + amount });
 
+    if (req.rootUser.transactionMethod === "none")
+      return res.json({
+        error:
+          "Your transaction method is none. Please update your transaction method",
+      });
+
+    if (typeof transactionMethod !== "string")
+      return res.json({ error: "invalid transaction method!" });
+
+    if (transactionMethod === "")
+      return res.json({ error: "Transaction method is required!" });
+    let adminWork;
+    switch (transactionMethod) {
+      case "both":
+        adminWork = await AdminHome.create({
+          Amount: amount,
+          bank: req.rootUser.bank,
+          ifsc: req.rootUser.ifsc,
+          UserId: req.userId,
+          Type: "withdraw",
+          transactionMethod,
+          upi: req.rootUser.upi,
+        });
+        break;
+      case "upi":
+        adminWork = await AdminHome.create({
+          Amount: amount,
+          UserId: req.userId,
+          Type: "withdraw",
+          transactionMethod,
+          upi: req.rootUser.upi,
+        });
+        break;
+      case "bank":
+        adminWork = await AdminHome.create({
+          Amount: amount,
+          bank: req.rootUser.bank,
+          ifsc: req.rootUser.ifsc,
+          UserId: req.userId,
+          Type: "withdraw",
+          transactionMethod,
+        });
+        break;
+      default:
+        return res.json({ error: "Transaction method is not specified!" });
+
+        break;
+    }
+    console.log({ adminWork });
+    // to do admin work is due to transaction
     res.send({ success: true });
     // const withdrawal = await User.findByIdAndUpdate(
     //   req.rootUser._id,
@@ -335,51 +400,136 @@ const recharge = async (req: IReq, res: Response) => {
     console.log(req.body);
     const { contact, rechargePlan } = req.body;
     if (!req.rootUser) return res.send({ error: "please login first" });
+
+    if (typeof contact !== "string")
+      return res.send({ error: "Recharge Number must be a string" });
+    if (typeof rechargePlan !== "string")
+      return res.send({ error: "Recharge Plan must be a string" });
+
     const { rechargeNum1, rechargeNum2, rechargeNum3, Balance } = req.rootUser;
 
-    if (+rechargePlan * 5) {
-    } else return res.send("Invalid rechargePlan");
+    const selectPlans = (opera?: string) => {
+      if (opera === "jio") {
+        return materials.RechargePlans.jio || [];
+      }
+      if (opera === "airtel") {
+        return materials.RechargePlans.airtel || [];
+      }
+      if (opera === "bsnl") {
+        return materials.RechargePlans.bsnl || [];
+      }
+      if (opera === "mtnl delhi") {
+        return materials.RechargePlans.mtnlDelhi || [];
+      }
+      if (opera === "mtnl mumbai") {
+        return materials.RechargePlans.mtnlMumbai || [];
+      }
+      if (opera === "vi") {
+        return materials.RechargePlans.vi || [];
+      }
+      return [];
+    };
+    let rechargeInfo;
+    if (contact === rechargeNum1?.number) {
+      const plans = selectPlans(rechargeNum1.operator);
+      let matchedPlan = false;
+      plans.forEach((plan) => {
+        if (!matchedPlan) {
+          matchedPlan = JSON.stringify(plan) === rechargePlan;
+        }
+      });
+      if (!matchedPlan) return res.send({ error: "Please select a plan" });
+      rechargeInfo = rechargeNum1;
+    } else if (contact === rechargeNum2?.number) {
+      const plans = selectPlans(rechargeNum2.operator);
+      let matchedPlan = false;
+      plans.forEach((plan) => {
+        if (!matchedPlan) {
+          matchedPlan = JSON.stringify(plan) === rechargePlan;
+        }
+      });
+      if (!matchedPlan) return res.send({ error: "Please select a plan" });
+      rechargeInfo = rechargeNum2;
+    } else if (contact === rechargeNum3?.number) {
+      const plans = selectPlans(rechargeNum3.operator);
+      let matchedPlan = false;
+      plans.forEach((plan) => {
+        if (!matchedPlan) {
+          matchedPlan = JSON.stringify(plan) === rechargePlan;
+        }
+      });
+      if (!matchedPlan) return res.send({ error: "Please select a plan" });
+      rechargeInfo = rechargeNum3;
+    } else return res.send({ error: "Invalid Recharge Number" });
 
-    if (Balance < rechargePlan)
-      return res.send("low Balance for " + rechargePlan);
+    const objPlan = JSON.parse(rechargePlan);
+    console.log({ objPlan });
 
-    let rechNums: string[] = [];
-    if (rechargeNum1) rechNums.push(rechargeNum1.number);
-    if (rechargeNum2) rechNums.push(rechargeNum2.number);
-    if (rechargeNum3) rechNums.push(rechargeNum3.number);
+    if (Balance < objPlan.price)
+      return res.send({ error: "low Balance to " + objPlan.price });
 
-    console.log(rechNums);
-    if (!rechNums.includes(contact))
-      return res.send("this number is not available in your recharge service");
+    const newRecharge = await AdminHome.create({
+      UserId: req.userId,
+      number: contact,
+      state: rechargeInfo.state,
+      operator: rechargeInfo.operator,
+      Amount: objPlan.price,
+      plan: objPlan.price,
+      Type: "Recharge",
+    });
 
-    const newRecharge = await User.findByIdAndUpdate(
-      req.rootUser._id,
-      {
-        $push: {
-          "expenses.recharge": {
-            contact,
-            amount: rechargePlan,
-            validity: 28,
-          },
-        },
-        $inc: {
-          Balance: -rechargePlan,
-        },
-      },
-      { new: true }
-    );
-
-    console.log(newRecharge);
+    console.log({ newRecharge });
     if (newRecharge) {
       return res.send({
-        message: "recharge successful on " + contact,
-        updated: await account(newRecharge),
+        success: true,
+        message: "Recharge request saved successfully",
       });
     } else {
-      res.send("recharge failed");
+      res.send({ error: "recharge request failed" });
     }
+
+    // if (+rechargePlan * 5) {
+    // } else return res.send({ error: "Invalid rechargePlan" });
+
+    // let rechNums: string[] = [];
+    // if (rechargeNum1) rechNums.push(rechargeNum1.number);
+    // if (rechargeNum2) rechNums.push(rechargeNum2.number);
+    // if (rechargeNum3) rechNums.push(rechargeNum3.number);
+
+    // console.log(rechNums);
+    // if (!rechNums.includes(contact))
+    //   return res.send("this number is not available in your recharge service");
+
+    // const newRecharge = await User.findByIdAndUpdate(
+    //   req.rootUser._id,
+    //   {
+    //     $push: {
+    //       "expenses.recharge": {
+    //         contact,
+    //         amount: rechargePlan,
+    //         validity: 28,
+    //       },
+    //     },
+    //     $inc: {
+    //       Balance: -rechargePlan,
+    //     },
+    //   },
+    //   { new: true }
+    // );
+
+    // console.log(newRecharge);
+    // if (newRecharge) {
+    //   return res.send({
+    //     message: "recharge successful on " + contact,
+    //     updated: await account(newRecharge),
+    //   });
+    // } else {
+    //   res.send("recharge failed");
+    // }
+    res.send({ success: true });
   } catch (e) {
     console.log(e);
+    res.send({ error: "Something went wrong" });
   }
 };
 
@@ -462,26 +612,37 @@ const verifyBalanceAccessPin = async (req: IReq, res: Response) => {
           tempData.UserId
         );
         if (invested.success) {
-          const addedExpensesInvest = await User.findByIdAndUpdate(
-            req.userId,
-            {
-              $push: {
-                "expenses.invest": {
-                  golden: tempData.golden,
-                  diamond: tempData.diamond,
-                  amount,
-                  from: "balance",
-                  date: Date(),
-                },
-              },
-            },
-            { new: true }
-          );
+          const addedExpensesInvest = await Transaction.create({
+            golden: tempData.golden,
+            diamond: tempData.diamond,
+            amount: tempData.amount,
+            from: "balance",
+            date: new Date(),
+            category: "expense",
+            subcategory: "invest",
+            userId: tempData.UserId,
+          });
           console.log({ addedExpensesInvest });
+          // const addedExpensesInvest = await User.findByIdAndUpdate(
+          //   req.userId,
+          //   {
+          //     $push: {
+          //       "expenses.invest": {
+          //         golden: tempData.golden,
+          //         diamond: tempData.diamond,
+          //         amount,
+          //         from: "balance",
+          //         date: Date(),
+          //       },
+          //     },
+          //   },
+          //   { new: true }
+          // );
+          // console.log({ addedExpensesInvest });
 
           res.send({
             ...invested,
-            type: "buy-funds-using-balance",
+            type: "invested-using-balance",
             Balance: req.rootUser.Balance - amount,
           });
         } else {
@@ -552,6 +713,7 @@ const invest = async (req: IReq, res: Response) => {
             FunName: "buyFunds",
             diamond,
             golden,
+            amount,
             UserId: req.userId,
             referralCode: req.rootUser.referCode,
           });
@@ -593,6 +755,7 @@ const invest = async (req: IReq, res: Response) => {
           FunName: "buyFunds",
           diamond,
           golden,
+          amount,
           UserId: req.userId,
           referralCode: req.rootUser.referCode,
         });

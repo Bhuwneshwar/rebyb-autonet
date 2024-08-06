@@ -12,6 +12,7 @@ export interface AdminHomeModel extends Document {
   ifsc: string;
   bank: string;
   Amount: number;
+  extraData: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,17 +20,17 @@ export interface AdminHomeModel extends Document {
 const adminSchema: Schema<AdminHomeModel> = new Schema(
   {
     UserId: { type: String, required: true },
-    number: { type: String, required: true },
-    state: { type: String, required: true },
-    operator: { type: String, required: true },
-    plan: { type: Number, required: true },
+    number: { type: String },
+    state: { type: String },
+    operator: { type: String },
+    plan: { type: Number },
     Type: { type: String, required: true },
-    transactionMethod: { type: String, required: true },
+    transactionMethod: { type: String },
     upi: { type: String },
     ifsc: { type: String },
     bank: { type: String },
     Amount: { type: Number, required: true },
-    // timestamp: { type: Date, default: Date.now },
+    extraData: String,
   },
   {
     timestamps: true,

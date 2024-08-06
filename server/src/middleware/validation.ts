@@ -166,6 +166,28 @@ const validation = async (req: IReq) => {
       const contactRegex = /^([5-9]{1}[0-9]{9})$/;
       return contactRegex.test(num);
     };
+    const checkNumber = async (phone: string) => {
+      try {
+        console.log({ phone });
+
+        const exist = await User.findOne({
+          $or: [
+            { "rechargeNum1.number": phone },
+            { "rechargeNum2.number": phone },
+            { "rechargeNum3.number": phone },
+          ],
+        });
+
+        console.log({ exist });
+        // return !!exist;
+        if (exist) return true;
+        else return false;
+        // res.send("this number already added on " + nums + " accounts");
+      } catch (e) {
+        console.log(e);
+        // res.status(500).send({ error: "Server Error" });
+      }
+    };
 
     const validateState = (state: string): boolean => {
       return material.states.includes(state);
@@ -211,6 +233,13 @@ const validation = async (req: IReq) => {
       if (typeof rechNum1 === "string") {
         const filteredNum1 = validateNumber(rechNum1);
         if (filteredNum1) {
+          const existingOnAutoRG = await checkNumber(rechNum1);
+          if (existingOnAutoRG) {
+            return {
+              status: false,
+              message: "Recharge number 1 is Existing on Auto Recharge",
+            };
+          }
           rechNum++;
           Ok["rechNum1"] = rechNum1;
         } else {
@@ -272,6 +301,13 @@ const validation = async (req: IReq) => {
       if (typeof rechNum2 === "string") {
         const filteredNum2 = validateNumber(rechNum2);
         if (filteredNum2) {
+          const existingOnAutoRG = await checkNumber(rechNum2);
+          if (existingOnAutoRG) {
+            return {
+              status: false,
+              message: "Recharge number 2 is Existing on Auto Recharge",
+            };
+          }
           rechNum++;
           Ok["rechNum2"] = rechNum2;
         } else
@@ -332,6 +368,13 @@ const validation = async (req: IReq) => {
       if (typeof rechNum3 === "string") {
         const filteredNum3 = validateNumber(rechNum3);
         if (filteredNum3) {
+          const existingOnAutoRG = await checkNumber(rechNum3);
+          if (existingOnAutoRG) {
+            return {
+              status: false,
+              message: "Recharge number 3 is Existing on Auto Recharge",
+            };
+          }
           rechNum++;
           Ok["rechNum3"] = rechNum3;
         } else {
@@ -388,6 +431,19 @@ const validation = async (req: IReq) => {
         } else {
           return { status: false, message: "Invalid existing plan validity 3" };
         }
+      }
+    }
+
+    if (rechNum > 1) {
+      if (
+        rechNum1 === rechNum2 ||
+        rechNum2 === rechNum3 ||
+        rechNum3 === rechNum1
+      ) {
+        return {
+          status: false,
+          message: "1 or 2 or 3 number should different!",
+        };
       }
     }
 

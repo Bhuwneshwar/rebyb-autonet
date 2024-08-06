@@ -14,7 +14,7 @@ export interface PaymentHistoryModel extends Document {
 const paymentHistory: Schema<PaymentHistoryModel> = new Schema(
   {
     userId: { type: String },
-    amount: { type: Number, required: true },
+    amount: { type: Number },
     orderId: { type: String, required: true },
     paymentId: { type: String, required: true },
     signature: { type: String, required: true },

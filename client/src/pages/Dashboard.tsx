@@ -9,7 +9,7 @@ import AddIcon from "@mui/icons-material/Add";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import investIcon from "../assets/Investment-icon-by-back1design1-3 (1).svg";
 import { usePaymentVerify } from "../utils/usePaymentVerify";
-
+import { IPlan } from "./Signup";
 const Dashboard: React.FC = () => {
   const {
     dispatch,
@@ -17,14 +17,26 @@ const Dashboard: React.FC = () => {
   } = useGlobalContext();
   const { paymentVerify } = usePaymentVerify();
 
-  const [input_data, setInputData] = useState({
+  const [input_data, setInputData] = useState<{
+    topUp: string;
+    withDraw: string;
+    rechargePlan: string;
+    rechargeNumber: string;
+    golden: number;
+    diamond: number;
+    mrHistoryToggle: boolean;
+    transactionMethod: string;
+    plansByOperator: IPlan[];
+  }>({
     topUp: "10",
     withDraw: "10",
-    rechargePlan: 250,
+    rechargePlan: "",
     rechargeNumber: "",
     golden: 0,
     diamond: 0,
     mrHistoryToggle: false,
+    transactionMethod: "none",
+    plansByOperator: [],
   });
   interface IFunds {
     diamondFunds: {
@@ -79,6 +91,23 @@ const Dashboard: React.FC = () => {
     goldenFunds: [],
     diamondFunds: [],
   });
+  interface RechargePlans {
+    jio: IPlan[];
+    airtel: IPlan[];
+    vi: IPlan[];
+    bsnl: IPlan[];
+    mtnlDelhi: IPlan[];
+    mtnlMumbai: IPlan[];
+  }
+  const [plans, setPlans] = useState<RechargePlans>({
+    jio: [],
+    airtel: [],
+    vi: [],
+    bsnl: [],
+    mtnlDelhi: [],
+    mtnlMumbai: [],
+  });
+
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -283,12 +312,37 @@ const Dashboard: React.FC = () => {
     dispatch("loading", false);
   };
 
+  // const sendPostRequest = async () => {
+  //   const url = "https://ippocloud.com/api/v1/plans/mobile/prepaid-plans";
+  //   const headers = {
+  //     Authorization: "Basic bGl2ZV82MzAzZT....",
+  //     "Content-Type": "application/json",
+  //   };
+  //   const data = {
+  //     operator_code: "RP",
+  //     circle_code: "KA",
+  //   };
+
+  //   try {
+  //     const response = await axios.post(url, data, { headers });
+  //     console.log(response.status);
+  //     console.log(response.data);
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
+
+  // sendPostRequest();
+
   const withDraw = async () => {
     try {
       dispatch("loading", true);
       const response = await axios.post(
         "/api/v1/withdraw",
-        { amount: +input_data.withDraw },
+        {
+          amount: +input_data.withDraw,
+          transactionMethod: input_data.transactionMethod,
+        },
         {
           withCredentials: true,
         }
@@ -315,24 +369,39 @@ const Dashboard: React.FC = () => {
     dispatch("loading", false);
   };
 
-  // const rechargeNow = async () => {
-  //   try {
-  //     const response = await axios.post(
-  //       "/api/v1/account-recharge",
-  //       {
-  //         contact: input_data.rechargeNumber,
-  //         rechargePlan: input_data.rechargePlan,
-  //       },
-  //       {
-  //         withCredentials: true,
-  //       }
-  //     );
-  //     const data = response.data;
-  //     console.log(data);
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // };
+  const rechargeNow = async () => {
+    try {
+      dispatch("loading", true);
+      const response = await axios.post(
+        "/api/v1/recharge",
+        {
+          contact: input_data.rechargeNumber,
+          rechargePlan: input_data.rechargePlan,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+      const data = response.data;
+      console.log({ data });
+      if (data.success) {
+        toast.success("Recharge request sent", { position: "bottom-center" });
+      }
+      if (data.error) {
+        toast.error(data.error, { position: "bottom-center" });
+      }
+    } catch (e) {
+      console.log(e);
+      if (axios.isAxiosError(e)) {
+        toast.error(e.message, { position: "bottom-center" });
+      } else {
+        toast.error("An unexpected error occurred", {
+          position: "bottom-center",
+        });
+      }
+    }
+    dispatch("loading", false);
+  };
 
   // const buyGolden = async () => {
   //   try {
@@ -441,20 +510,24 @@ const Dashboard: React.FC = () => {
       try {
         const objData = JSON.parse(successResponseData);
         console.log({ objData });
-        if (objData.canBuyDiamond && objData.canBuyGolden) {
+        if (objData.type === "invested-using-balance") {
           dispatch("MyDetails", {
             ...MyDetails,
             canBuyDiamond: objData.canBuyDiamond,
             canBuyGolden: objData.canBuyGolden,
             Balance: objData.Balance,
           });
-          toast.success(" Purchase completed successfully");
-          // initial();
+          toast.success(" Purchased funds successfully");
+          initial();
         }
-        if (objData.type === "buy-funds-using-balance") {
-          toast.success("Funds added successfully");
-
-          // initial();
+        if (objData.type === "invested-from-account") {
+          dispatch("MyDetails", {
+            ...MyDetails,
+            canBuyDiamond: objData.canBuyDiamond,
+            canBuyGolden: objData.canBuyGolden,
+          });
+          toast.success(" Purchased funds successfully");
+          initial();
         }
         if (objData.type === "top-up" && objData.Balance) {
           dispatch("MyDetails", {
@@ -541,9 +614,10 @@ const Dashboard: React.FC = () => {
           goldenFunds: data.goldenFunds,
           diamondFunds: data.diamondFunds,
         }));
-        toast.success("Dashboard data loaded successfully", {
-          position: "bottom-center",
-        });
+        setPlans(() => data.RechargePlans);
+        // toast.success("Dashboard data loaded successfully", {
+        //   position: "bottom-center",
+        // });
       }
       if (data.error) {
         toast.error(data.error, { position: "bottom-center" });
@@ -560,6 +634,60 @@ const Dashboard: React.FC = () => {
     }
     dispatch("loading", false);
   };
+
+  const selectPlans = (opera?: string) => {
+    if (opera === "jio") {
+      return plans.jio || [];
+    }
+    if (opera === "airtel") {
+      return plans.airtel || [];
+    }
+    if (opera === "bsnl") {
+      return plans.bsnl || [];
+    }
+    if (opera === "mtnl delhi") {
+      return plans.mtnlDelhi || [];
+    }
+    if (opera === "mtnl mumbai") {
+      return plans.mtnlMumbai || [];
+    }
+    if (opera === "vi") {
+      return plans.vi || [];
+    }
+    return [];
+  };
+
+  useEffect(() => {
+    if (input_data.rechargeNumber === MyDetails?.rechargeNum1.number) {
+      const plans = selectPlans(MyDetails.rechargeNum1.operator);
+      setInputData((prev) => ({
+        ...prev,
+        plansByOperator: plans,
+      }));
+    }
+    if (input_data.rechargeNumber === MyDetails?.rechargeNum2.number) {
+      const plans = selectPlans(MyDetails.rechargeNum2.operator);
+      setInputData((prev) => ({
+        ...prev,
+        plansByOperator: plans,
+      }));
+    }
+    if (input_data.rechargeNumber === MyDetails?.rechargeNum3.number) {
+      const plans = selectPlans(MyDetails.rechargeNum3.operator);
+      setInputData((prev) => ({
+        ...prev,
+        plansByOperator: plans,
+      }));
+    }
+    if (input_data.rechargeNumber === "") {
+      setInputData((prev) => ({
+        ...prev,
+        plansByOperator: [],
+      }));
+    }
+  }, [input_data.rechargeNumber]);
+
+  useEffect(() => {}, [funds]);
   useEffect(() => {
     initial();
   }, []);
@@ -572,7 +700,7 @@ const Dashboard: React.FC = () => {
           {" "}
           <span>Welcome {MyDetails.name}</span>{" "}
         </h1>
-        <div className="d-f">
+        <div className="front">
           <div className="balance">
             {" "}
             Balance: ₹{MyDetails.Balance.toFixed(2)}
@@ -1237,39 +1365,112 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="border-label">
             <span>Withdraw on Bank</span>
-            <input
-              type="number"
-              placeholder="Amount..."
-              onChange={handleChange}
-              name="withDraw"
-              id=""
-              value={input_data.withDraw}
-            />
+            <div className="d-f">
+              <input
+                type="number"
+                placeholder="Amount..."
+                onChange={handleChange}
+                name="withDraw"
+                id=""
+                value={input_data.withDraw}
+              />
+              <select
+                name="transactionMethod"
+                id=""
+                value={input_data.transactionMethod}
+                onChange={handleChange}
+              >
+                <option value="none">NONE</option>
+                {MyDetails.transactionMethod === "both" ? (
+                  <>
+                    <option value="both">TRY IN BOTH</option>
+                    <option value="upi">TRY IN UPI</option>
+                    <option value="bank">TRY IN BANK</option>
+                  </>
+                ) : (
+                  ""
+                )}
+                {MyDetails.transactionMethod === "bank" ? (
+                  <>
+                    <option value="bank">TRY IN BANK</option>
+                  </>
+                ) : (
+                  ""
+                )}
+                {MyDetails.transactionMethod === "upi" ? (
+                  <>
+                    <option value="upi">TRY IN UPI</option>
+                  </>
+                ) : (
+                  ""
+                )}
+                {/* {MyDetails.transactionMethod === "none" ? (
+                  <>
+                    <option value="none">NONE</option>
+                  </>
+                ) : (
+                  ""
+                )} */}
+              </select>
+            </div>
             <br />
             <button onClick={withDraw}>Withdraw</button>
           </div>
           <div className="border-label">
             <span>Recharge Now</span>
-            <div className="d-g">
+            <div className="d-f">
               <select
                 onChange={handleChange}
                 value={input_data.rechargeNumber}
-                name="rechNumber"
-                id="rechargeNums"
+                name="rechargeNumber"
+                id="rechargeNumber"
               >
-                <option value="0">select contact</option>
-                {/* {data.rechNums.map((ob, i) => {
-                    return (
-                      <option key={i} value={ob.rechNumber}>
-                        {ob.rechNumber}
-                      </option>
-                    );
-                  })} */}
+                <option value="">select contact</option>
+                {MyDetails.rechargeNum1.number ? (
+                  <>
+                    <option value={MyDetails.rechargeNum1.number}>
+                      {MyDetails.rechargeNum1.number}
+                    </option>
+                  </>
+                ) : (
+                  ""
+                )}
+                {MyDetails.rechargeNum2.number ? (
+                  <>
+                    <option value={MyDetails.rechargeNum2.number}>
+                      {MyDetails.rechargeNum2.number}
+                    </option>
+                  </>
+                ) : (
+                  ""
+                )}
+                {MyDetails.rechargeNum3.number ? (
+                  <>
+                    <option value={MyDetails.rechargeNum3.number}>
+                      {MyDetails.rechargeNum3.number}
+                    </option>
+                  </>
+                ) : (
+                  ""
+                )}
               </select>
-              <input type="number" placeholder="Amount..." />
+              <select
+                value={input_data.rechargePlan}
+                name="rechargePlan"
+                onChange={handleChange}
+                id=""
+              >
+                <option value="">Select a Plan</option>
+                {input_data.plansByOperator.map((plan) => (
+                  <option value={JSON.stringify(plan)}>
+                    Price {plan.price} Data {plan.data} Validity {plan.validity}
+                  </option>
+                ))}
+              </select>
+              {/* <input type="number" placeholder="Amount..." /> */}
             </div>
 
-            <button>Recharge Now</button>
+            <button onClick={rechargeNow}>Recharge Now</button>
           </div>
         </div>
       </div>

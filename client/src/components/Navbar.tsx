@@ -10,7 +10,7 @@ import HouseRoundedIcon from "@mui/icons-material/HouseRounded";
 import LockOpenRoundedIcon from "@mui/icons-material/LockOpenRounded";
 // import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
 import HistoryRounded from "@mui/icons-material/HistoryRounded";
-
+import PasswordIcon from "@mui/icons-material/Password";
 const Navbar = () => {
   const {
     dispatch,
@@ -66,6 +66,13 @@ const Navbar = () => {
           <Link to="/messages">
             {" "}
             <EmailRoundedIcon /> Message
+          </Link>
+        </li>
+        <li>
+          <Link to="/password-set">
+            {" "}
+            <PasswordIcon />
+            Password/Balance PIN
           </Link>
         </li>
         <li>

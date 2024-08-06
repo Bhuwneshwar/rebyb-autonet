@@ -5,8 +5,8 @@ import register from "../OnPayment/register";
 import dotenv from "dotenv";
 import buyFunds from "../controllers/buyFunds";
 import { topUpComplete } from "../controllers/Account";
-import User from "../models/UsersSchema";
 import PaymentHistory from "../models/paymentSuccessSchema";
+import Transaction from "../models/historySchema";
 
 // Load environment variables
 dotenv.config();
@@ -83,6 +83,8 @@ const paymentVerification = async (req: Request, res: Response) => {
       // wait(1000);
 
       const temp = await Temporary.findOne({ id: orderId });
+      console.log({ temp });
+
       if (!temp) {
         return res
           .status(201)
@@ -90,10 +92,8 @@ const paymentVerification = async (req: Request, res: Response) => {
       }
 
       await PaymentHistory.findByIdAndUpdate(newPaymentHistory._id, {
-        $set: {
-          userId: temp.UserId,
-          amount: temp.amount,
-        },
+        userId: temp.UserId,
+        amount: temp.amount,
       });
 
       console.log("Temporary data found:", temp);
@@ -113,21 +113,16 @@ const paymentVerification = async (req: Request, res: Response) => {
           temp.UserId
         );
         if (invested.success) {
-          const addedExpensesInvest = await User.findByIdAndUpdate(
-            temp.UserId,
-            {
-              $push: {
-                "expenses.invest": {
-                  golden: temp.golden,
-                  diamond: temp.diamond,
-                  amount: temp.amount,
-                  from: "account",
-                  date: Date(),
-                },
-              },
-            },
-            { new: true }
-          );
+          const addedExpensesInvest = await Transaction.create({
+            golden: temp.golden,
+            diamond: temp.diamond,
+            amount: temp.amount,
+            from: "account",
+            date: Date(),
+            category: "expense",
+            subcategory: "invest",
+            userId: temp.UserId,
+          });
           console.log({ addedExpensesInvest });
           res.send({ ...invested, type: "invested-from-account" });
         }
